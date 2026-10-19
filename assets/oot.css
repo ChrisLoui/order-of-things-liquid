@@ -48,8 +48,6 @@
 
 html {
   -webkit-text-size-adjust: 100%;
-  /* Lets height animate to auto (the details accordion) where supported. */
-  interpolate-size: allow-keywords;
 }
 
 body {

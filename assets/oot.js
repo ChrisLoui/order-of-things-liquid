@@ -69,6 +69,69 @@ class OotCarousel extends HTMLElement {
 customElements.define('oot-carousel', OotCarousel);
 
 /**
+ * <oot-accordion>: the details rows (Figma Accordion Row 14:2815), whose body eases
+ * open over 200ms in every browser, as round 1's Collapsible does. The rows are
+ * <details name>, so without JS they still open natively, one at a time. This takes
+ * over the one-open rule from the name attribute, so the row closing animates too.
+ */
+class OotAccordion extends HTMLElement {
+  connectedCallback() {
+    this.rows = Array.from(this.querySelectorAll(':scope > details'));
+    this.rows.forEach((row) => row.removeAttribute('name'));
+
+    this.listeners = new AbortController();
+    this.addEventListener('click', (event) => this.onClick(event), { signal: this.listeners.signal });
+  }
+
+  disconnectedCallback() {
+    this.listeners?.abort();
+  }
+
+  onClick(event) {
+    const row = event.target.closest('summary')?.parentElement;
+    if (!this.rows.includes(row)) return;
+
+    event.preventDefault();
+    // A row mid-close still has [open], so read the state it's heading to.
+    const opening = !row.open || row.hasAttribute('data-closing');
+    if (opening) {
+      this.rows.forEach((other) => {
+        if (other !== row && other.open) this.toggleRow(other, false);
+      });
+    }
+    this.toggleRow(row, opening);
+  }
+
+  /** Animates the row's height between its summary and its full content. */
+  toggleRow(row, open) {
+    const start = row.offsetHeight;
+    row.animation?.cancel();
+    row.toggleAttribute('data-closing', !open);
+    if (open) row.open = true;
+
+    const border = row.offsetHeight - row.clientHeight;
+    const end = open ? row.offsetHeight : row.querySelector('summary').offsetHeight + border;
+    const finish = () => {
+      row.animation = null;
+      row.style.overflow = '';
+      row.removeAttribute('data-closing');
+      if (!open) row.open = false;
+    };
+
+    if (prefersReducedMotion() || start === end) {
+      finish();
+      return;
+    }
+
+    row.style.overflow = 'hidden';
+    row.animation = row.animate({ height: [`${start}px`, `${end}px`] }, { duration: 200, easing: 'ease-out' });
+    row.animation.onfinish = finish;
+  }
+}
+
+customElements.define('oot-accordion', OotAccordion);
+
+/**
  * <oot-purchase>: the buy panel around the {% form 'product' %} (snippets/oot-purchase-form).
  * Keeps the purchase heading, price and button in step with the selected option, using
  * the strings Liquid rendered onto each radio, and submits through the AJAX Cart API.

@@ -328,9 +328,10 @@
 
     {%- comment -%}
       Details accordion (Figma 14:3381), below the plate on the brand grid. A shared
-      <details name> keeps one row open at a time natively; older browsers allow several.
+      <details name> keeps one row open at a time natively; <oot-accordion> (oot.js)
+      adds the height animation and animates the row it closes.
     {%- endcomment -%}
-    <div class="oot-details">
+    <oot-accordion class="oot-details">
       {%- assign row = 0 -%}
       {%- for block in section.blocks -%}
         {%- unless block.type == 'detail' or block.type == 'ingredients' -%}
@@ -415,7 +416,7 @@
           </div>
         </details>
       {%- endfor -%}
-    </div>
+    </oot-accordion>
   </oot-purchase>
 </div>
 
@@ -716,24 +717,15 @@
   }
 
   /* Details accordion (Figma Accordion Row 14:2815): "+" becomes "–" and the body
-     eases open over 200ms where height can animate to auto. */
+     eases open over 200ms (oot.js animates the height). */
 
   .oot-details {
+    display: block;
     margin-block-start: 16px;
   }
 
   .oot-details__row {
     border-block-end: 1px solid var(--oot-color-ink);
-  }
-
-  .oot-details__row::details-content {
-    block-size: 0;
-    overflow: hidden;
-    transition: block-size 200ms ease-out, content-visibility 200ms allow-discrete;
-  }
-
-  .oot-details__row[open]::details-content {
-    block-size: auto;
   }
 
   .oot-details__summary {
@@ -764,7 +756,7 @@
     content: '+';
   }
 
-  .oot-details__row[open] .oot-details__toggle::before {
+  .oot-details__row[open]:not([data-closing]) .oot-details__toggle::before {
     content: '–';
   }
 
@@ -797,12 +789,6 @@
   .oot-details__chips li {
     padding: 4px 8px;
     border: 1px solid var(--oot-color-ink);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .oot-details__row::details-content {
-      transition: none;
-    }
   }
 
   @media (min-width: 1024px) {
