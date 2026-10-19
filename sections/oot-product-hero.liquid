@@ -26,7 +26,7 @@
 
   assign status = composition[1]
 
-  # Photo i shows product media i when the product has it (see oot-gallery-image).
+  # Photo i shows product media i when the product has it (see oot-image).
   assign photos = section.blocks | where: 'type', 'photo'
   assign photo_count = photos.size
   assign photo_count_padded = photo_count | prepend: '0' | slice: -2, 2
@@ -47,6 +47,7 @@
     {%- for block in photos limit: 4 -%}
       {%- liquid
         # The first photo is the full-width hero tile, also mobile slide 1.
+        assign fallback = 'oot-gallery-' | append: forloop.index | append: '.jpg'
         assign full = forloop.first
         assign sizes = '(min-width: 1440px) 390px, 27vw'
         assign hidden_on = ''
@@ -59,10 +60,10 @@
         class="oot-hero__tile{% if full %} oot-hero__tile--full{% endif %}"
         {{ block.shopify_attributes }}
       >
-        {% render 'oot-gallery-image',
+        {% render 'oot-image',
           media: product.media[forloop.index0],
           image: block.settings.image,
-          position: forloop.index,
+          fallback: fallback,
           alt: block.settings.caption,
           sizes: sizes,
           priority: full,
@@ -135,15 +136,16 @@
               {{ block.shopify_attributes }}
             >
               {%- liquid
+                assign fallback = 'oot-gallery-' | append: forloop.index | append: '.jpg'
                 assign hidden_on = ''
                 if forloop.first
                   assign hidden_on = 'desktop'
                 endif
               -%}
-              {% render 'oot-gallery-image',
+              {% render 'oot-image',
                 media: product.media[forloop.index0],
                 image: block.settings.image,
-                position: forloop.index,
+                fallback: fallback,
                 alt: block.settings.caption,
                 sizes: '(min-width: 1024px) 1px, 100vw',
                 priority: forloop.first,
@@ -214,22 +216,11 @@
 
       {%- liquid
         # Scent tiles: the chosen collection, or every product, in composition order.
-        # Collections paginate to 50 products by default, plenty for six compositions.
-        # Each product is parsed once into "NNN~index~status", sorted as text.
         assign pool = section.settings.collection.products | default: collections.all.products
-        assign entries = ''
-        for item in pool
-          capture item_data
-            render 'oot-composition', product: item
-          endcapture
-          assign item_data = item_data | strip | split: '|'
-          if item_data[0] == blank
-            continue
-          endif
-          assign key = item_data[0] | prepend: '000' | slice: -3, 3
-          assign entries = entries | append: key | append: '~' | append: forloop.index0 | append: '~' | append: item_data[1] | append: ','
-        endfor
-        assign entries = entries | split: ',' | sort
+        capture entries
+          render 'oot-composition-order', products: pool
+        endcapture
+        assign entries = entries | strip | split: ','
       -%}
 
       {%- if entries.size > 0 -%}

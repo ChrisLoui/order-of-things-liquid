@@ -181,10 +181,48 @@
         "show_carton": true,
         "note": "Complimentary shipping · Wrapped by hand"
       }
+    },
+    "manifesto": {
+      "type": "oot-manifesto",
+      "settings": {
+        "heading": "Order without\ncomplexity.",
+        "body": "Six compositions, each written to fine-fragrance standard. The first use matters; the hundredth matters more.",
+        "body_mobile": "Six compositions, each written to fine-fragrance standard and finished without compromise."
+      }
+    },
+    "brand_story": {
+      "type": "oot-brand-story",
+      "settings": {
+        "heading": "A fragrance that wears close to the skin.",
+        "body": "Every composition is written complete first, then adapted to sit in its format. Fragrance is the reason the carton exists, not a finishing note.",
+        "points": "Composed in France & Italy\nFine-fragrance standard\nSix compositions",
+        "show_notes": true,
+        "alt": "A hand raised to the lips"
+      }
+    },
+    "six_cartons": {
+      "type": "oot-six-cartons",
+      "settings": {
+        "alt": "Six butter cartons in a row on a travertine block"
+      }
+    },
+    "collection": {
+      "type": "oot-collection",
+      "settings": {
+        "heading": "The collection",
+        "collection": "",
+        "card_count": 3,
+        "all_label": "All fragrance",
+        "all_link": ""
+      }
     }
   },
   "order": [
     "main",
+    "manifesto",
+    "brand_story",
+    "six_cartons",
+    "collection",
     "sticky_bar"
   ]
 }

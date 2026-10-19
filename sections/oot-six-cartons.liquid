@@ -1,0 +1,57 @@
+{% comment %}
+  Section contract.
+  Six cartons (Figma 14:3868 desktop 1440×780, 14:4041 mobile 390×390): one full-bleed photo.
+  @example
+  <!-- Below the brand story in templates/product.order-of-things.json -->
+{% endcomment %}
+
+<div class="oot-six-cartons">
+  {% render 'oot-image',
+    image: section.settings.image,
+    fallback: 'oot-six-cartons.jpg',
+    alt: section.settings.alt,
+    sizes: '(min-width: 1440px) 1440px, 100vw'
+  %}
+</div>
+
+{% stylesheet %}
+  .oot-six-cartons {
+    position: relative;
+    max-width: var(--oot-page-width);
+    margin-inline: auto;
+    aspect-ratio: 1;
+  }
+
+  @media (min-width: 1024px) {
+    .oot-six-cartons {
+      aspect-ratio: 1440 / 780;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "OoT six cartons",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Photo",
+      "info": "Leave empty to use the bundled photo."
+    },
+    {
+      "type": "text",
+      "id": "alt",
+      "label": "Alt text",
+      "info": "Used when the photo has no alt text of its own.",
+      "default": "Six butter cartons in a row on a travertine block"
+    }
+  ],
+  "presets": [
+    {
+      "name": "OoT six cartons"
+    }
+  ]
+}
+{% endschema %}

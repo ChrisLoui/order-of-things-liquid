@@ -1,0 +1,220 @@
+{% comment %}
+  Section contract.
+  Manifesto (Figma 14:3818 desktop 1440×661, 14:3983 mobile 390×560): a photo with the
+  large symbol, beside a charcoal panel of butter rules and type. The render shows only
+  three of the grid's columns here, so only those are drawn.
+  @example
+  <!-- Below the hero in templates/product.order-of-things.json -->
+{% endcomment %}
+
+{%- liquid
+  assign heading_lines = section.settings.heading | newline_to_br | split: '<br />'
+  assign body_mobile = section.settings.body_mobile | default: section.settings.body
+-%}
+
+<div class="oot-manifesto">
+  <div class="oot-manifesto__media">
+    {% render 'oot-image',
+      image: section.settings.image,
+      fallback: 'oot-manifesto.jpg',
+      alt: '',
+      sizes: '(min-width: 1440px) 1260px, (min-width: 1024px) 88vw, 100vw',
+      class: 'oot-manifesto__photo'
+    %}
+    {% render 'oot-icon', name: 'logo-symbol', class: 'oot-manifesto__symbol' %}
+  </div>
+
+  <div class="oot-manifesto__panel">
+    <div class="oot-manifesto__content">
+      {% render 'oot-rule', tone: 'butter' %}
+      {%- comment -%}
+        One line per heading line, as in Figma. Archivo Narrow is wider than Pilat Narrow,
+        so below 1280px the panel is too narrow for 64px and the heading stays at H2.
+      {%- endcomment -%}
+      <h2 class="oot-h2 oot-manifesto__heading">
+        {%- for line in heading_lines -%}
+          <span>{{ line | strip | escape }}</span>
+        {%- endfor -%}
+      </h2>
+      <div class="oot-manifesto__rule-mid">{% render 'oot-rule', tone: 'butter' %}</div>
+      <p class="oot-body-m oot-manifesto__body">
+        <span class="oot-manifesto__mobile">{{ body_mobile | escape }}</span>
+        <span class="oot-manifesto__desktop">{{ section.settings.body | escape }}</span>
+      </p>
+      <div class="oot-manifesto__rule-end">{% render 'oot-rule', tone: 'butter' %}</div>
+    </div>
+  </div>
+
+  {% render 'oot-brand-grid', tone: 'bone', rows: 0, columns: '1,3,4', class: 'oot-manifesto__grid' %}
+</div>
+
+{% stylesheet %}
+  .oot-manifesto {
+    position: relative;
+    display: grid;
+    max-width: var(--oot-page-width);
+    margin-inline: auto;
+  }
+
+  .oot-manifesto__media {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    background: var(--oot-color-charcoal);
+  }
+
+  .oot-manifesto__symbol {
+    position: relative;
+    width: 140px;
+    color: var(--oot-color-bone);
+  }
+
+  .oot-manifesto__panel {
+    display: flex;
+    flex-direction: column;
+    padding: 30px 20px 25px;
+    background: var(--oot-color-charcoal);
+    color: var(--oot-color-butter);
+  }
+
+  .oot-manifesto__content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  .oot-manifesto__heading {
+    margin-block-start: 27px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .oot-manifesto__heading span {
+    display: block;
+  }
+
+  .oot-manifesto__rule-mid {
+    margin-block-start: auto;
+    padding-block-start: 24px;
+  }
+
+  .oot-manifesto__body {
+    margin-block-start: 26px;
+  }
+
+  .oot-manifesto__rule-end {
+    margin-block-start: 22px;
+  }
+
+  .oot-manifesto__desktop,
+  .oot-manifesto__grid {
+    display: none;
+  }
+
+  @media (min-width: 1024px) {
+    .oot-manifesto {
+      grid-template-columns: 1fr 1fr;
+      height: 661px;
+    }
+
+    .oot-manifesto__media {
+      aspect-ratio: auto;
+    }
+
+    /* Desktop crops in tight on the hair over the water at the photo's left edge. */
+    .oot-manifesto__photo {
+      transform: scale(1.75);
+      transform-origin: left;
+    }
+
+    .oot-manifesto__symbol {
+      width: 300px;
+    }
+
+    .oot-manifesto__panel {
+      padding: 48px 0 49px 15.7%;
+    }
+
+    .oot-manifesto__content {
+      width: 450px;
+      max-width: 100%;
+    }
+
+    .oot-manifesto__heading {
+      margin-block-start: 28px;
+      padding-inline-start: 16px;
+    }
+
+    .oot-manifesto__body {
+      max-width: 340px;
+      margin-block-start: 25px;
+      padding-inline-start: 16px;
+    }
+
+    .oot-manifesto__rule-end {
+      margin-block-start: auto;
+    }
+
+    .oot-manifesto__mobile {
+      display: none;
+    }
+
+    .oot-manifesto__desktop {
+      display: inline;
+    }
+
+    .oot-manifesto__grid {
+      display: block;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .oot-manifesto__heading {
+      font-size: 64px;
+      line-height: 0.96;
+      letter-spacing: -0.005em;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "OoT manifesto",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Photo",
+      "info": "Leave empty to use the bundled photo."
+    },
+    {
+      "type": "textarea",
+      "id": "heading",
+      "label": "Heading",
+      "info": "One line per row, as it should break.",
+      "default": "Order without\ncomplexity."
+    },
+    {
+      "type": "textarea",
+      "id": "body",
+      "label": "Text",
+      "default": "Six compositions, each written to fine-fragrance standard. The first use matters; the hundredth matters more."
+    },
+    {
+      "type": "textarea",
+      "id": "body_mobile",
+      "label": "Text on mobile",
+      "info": "Leave empty to use the text above."
+    }
+  ],
+  "presets": [
+    {
+      "name": "OoT manifesto"
+    }
+  ]
+}
+{% endschema %}

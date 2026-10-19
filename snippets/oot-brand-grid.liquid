@@ -1,32 +1,57 @@
 {% doc %}
   Figma Brand Grid (14:1663): six columns at fixed percentages of the width plus
-  baseline rows ("Fine" = 30px). Ink over bone, bone over imagery. Drawn entirely
-  with backgrounds on one element; position the host relative, the grid fills it.
+  baseline rows ("Fine" = 30px, "Medium" = 60px). Ink over bone, bone over imagery.
+  Drawn entirely with backgrounds on one element; position the host relative, the
+  grid fills it.
 
   @param {string} [tone] - 'ink' (default) or 'bone'
+  @param {number} [rows] - Row spacing in px (rows start one spacing down); 0 for columns only. Default 30.
+  @param {string} [columns] - Which of the six columns to draw, e.g. '1,3,4'. Default all.
   @param {string} [class] - Extra class, e.g. to hide it on mobile
+  @param {string} [style] - Extra inline style, e.g. to lay the grid over a wider area than its host
 
   @example
-  {% render 'oot-brand-grid', class: 'oot-hero__grid' %}
+  {% render 'oot-brand-grid', tone: 'bone', rows: 0, columns: '1,3,4' %}
 {% enddoc %}
 
-<div class="oot-brand-grid oot-brand-grid--{{ tone | default: 'ink' }} {{ class }}" aria-hidden="true"></div>
+{%- liquid
+  assign row_spacing = rows | default: 30
+  assign grid_style = '--oot-grid-row: ' | append: row_spacing | append: 'px;'
+  if rows == 0
+    assign grid_style = grid_style | append: '--oot-grid-line: transparent;'
+  endif
+  if columns != blank
+    assign shown = columns | split: ','
+    for n in (1..6)
+      assign n_string = n | append: ''
+      unless shown contains n_string
+        assign grid_style = grid_style | append: '--oot-grid-col-' | append: n | append: ': transparent;'
+      endunless
+    endfor
+  endif
+-%}
+
+<div
+  class="oot-brand-grid oot-brand-grid--{{ tone | default: 'ink' }} {{ class }}"
+  style="{{ grid_style }}{{ style }}"
+  aria-hidden="true"
+></div>
 
 {% stylesheet %}
   .oot-brand-grid {
-    --oot-grid-row: 30px;
     position: absolute;
     inset: 0;
     pointer-events: none;
     /* Six 1px columns, then baseline rows starting one row down. A percentage
-       position on a 1px image lands within a pixel of the Figma column. */
+       position on a 1px image lands within a pixel of the Figma column. Each column
+       can be hidden by setting its --oot-grid-col-N to transparent. */
     background-image:
-      linear-gradient(var(--oot-grid-col), var(--oot-grid-col)),
-      linear-gradient(var(--oot-grid-col), var(--oot-grid-col)),
-      linear-gradient(var(--oot-grid-col), var(--oot-grid-col)),
-      linear-gradient(var(--oot-grid-col), var(--oot-grid-col)),
-      linear-gradient(var(--oot-grid-col), var(--oot-grid-col)),
-      linear-gradient(var(--oot-grid-col), var(--oot-grid-col)),
+      linear-gradient(var(--oot-grid-col-1, var(--oot-grid-col)), var(--oot-grid-col-1, var(--oot-grid-col))),
+      linear-gradient(var(--oot-grid-col-2, var(--oot-grid-col)), var(--oot-grid-col-2, var(--oot-grid-col))),
+      linear-gradient(var(--oot-grid-col-3, var(--oot-grid-col)), var(--oot-grid-col-3, var(--oot-grid-col))),
+      linear-gradient(var(--oot-grid-col-4, var(--oot-grid-col)), var(--oot-grid-col-4, var(--oot-grid-col))),
+      linear-gradient(var(--oot-grid-col-5, var(--oot-grid-col)), var(--oot-grid-col-5, var(--oot-grid-col))),
+      linear-gradient(var(--oot-grid-col-6, var(--oot-grid-col)), var(--oot-grid-col-6, var(--oot-grid-col))),
       linear-gradient(to bottom, transparent calc(var(--oot-grid-row) - 1px), var(--oot-grid-line) 0);
     background-size:
       1px 100%, 1px 100%, 1px 100%, 1px 100%, 1px 100%, 1px 100%,

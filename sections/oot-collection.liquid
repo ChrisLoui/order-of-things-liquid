@@ -1,0 +1,282 @@
+{% comment %}
+  Section contract.
+  "The collection" (Figma 14:3871 desktop, 14:4043 mobile): "then the rest of the
+  collection, offered and never pushed" (journey note 14:3371), so the first
+  compositions other than the current one, as Product Card / R2. Available cards
+  switch composition in place and land at the top of the new page; unreleased and
+  sold-out ones aren't links. Swaps with the hero on a composition switch.
+  @example
+  <!-- Below the six cartons in templates/product.order-of-things.json -->
+{% endcomment %}
+
+{%- liquid
+  assign pool = section.settings.collection.products | default: collections.all.products
+  capture entries
+    render 'oot-composition-order', products: pool
+  endcapture
+  assign entries = entries | strip | split: ','
+  assign all_url = section.settings.all_link | default: routes.all_products_collection_url
+-%}
+
+<div class="oot-collection" data-oot-product-section data-section-id="{{ section.id }}">
+  <div class="oot-collection__rule">{% render 'oot-rule', size: 'section' %}</div>
+
+  <h2 class="oot-h2 oot-collection__heading">{{ section.settings.heading | escape }}</h2>
+
+  {%- if section.settings.all_label != blank -%}
+    <a href="{{ all_url }}" class="oot-button-m oot-collection__all">
+      {{- section.settings.all_label | escape -}}
+      {% render 'oot-icon', name: 'arrow', class: 'oot-button__arrow' %}
+    </a>
+  {%- endif -%}
+
+  <ul class="oot-collection__cards">
+    {%- assign shown = 0 -%}
+    {%- for entry in entries -%}
+      {%- liquid
+        assign parts = entry | split: '~'
+        assign card_index = parts[1] | plus: 0
+        assign card = pool[card_index]
+        if card.id == product.id
+          continue
+        endif
+        if shown >= section.settings.card_count
+          break
+        endif
+        assign shown = shown | plus: 1
+
+        capture card_data
+          render 'oot-composition', product: card
+        endcapture
+        assign card_data = card_data | strip | split: '|'
+        assign card_number = card_data[0]
+        assign card_status = card_data[1]
+        assign card_label = card_data[5]
+
+        # "Eau de Parfum" → "EDP", for the short mobile label.
+        assign type_words = card.type | split: ' '
+        assign type_short = ''
+        for word in type_words
+          # Filters run left to right, so take the initial before appending it.
+          assign initial = word | slice: 0 | upcase
+          assign type_short = type_short | append: initial
+        endfor
+      -%}
+      {%- capture card_content -%}
+        <p class="oot-button-m oot-collection__bar">
+          <span class="oot-collection__name">
+            <span class="oot-collection__mobile">No.{{ card_number }} {{ type_short }}</span>
+            <span class="oot-collection__desktop">{{ card_label | escape }} — {{ card.type | escape }}</span>
+            {%- case card_status -%}
+              {%- when 'coming-soon' -%}
+                <span class="oot-visually-hidden">{{ 'oot.product.coming_soon_a11y' | t }}</span>
+              {%- when 'sold-out' -%}
+                <span class="oot-visually-hidden">{{ 'oot.product.sold_out_a11y' | t }}</span>
+            {%- endcase -%}
+          </span>
+          <span>{{ card.price | money_without_trailing_zeros }}</span>
+        </p>
+        <div class="oot-collection__media">
+          {% render 'oot-image',
+            media: card.featured_media,
+            image: section.settings.placeholder,
+            fallback: 'oot-collection-placeholder.jpg',
+            alt: card_label,
+            sizes: '(min-width: 1440px) 449px, (min-width: 1024px) 31vw, 169px'
+          %}
+        </div>
+      {%- endcapture -%}
+      <li class="oot-collection__card">
+        {%- if card_status == 'available' -%}
+          <a href="{{ card.url }}" class="oot-collection__link" data-oot-switch data-oot-scroll="top">
+            {{- card_content -}}
+          </a>
+        {%- else -%}
+          <div class="oot-collection__link">{{ card_content }}</div>
+        {%- endif -%}
+      </li>
+    {%- endfor -%}
+  </ul>
+</div>
+
+{% stylesheet %}
+  /* Mobile: rule, heading, a horizontal card scroller, then the "All" link.
+     Desktop: the heading and the link share a row above a three-up grid. */
+  .oot-collection {
+    display: grid;
+    grid-template-areas: 'rule' 'heading' 'cards' 'all';
+    max-width: var(--oot-page-width);
+    margin-inline: auto;
+    padding: 41px 20px 40px;
+  }
+
+  .oot-collection__rule {
+    grid-area: rule;
+  }
+
+  .oot-collection__heading {
+    grid-area: heading;
+    margin-block-start: 32px;
+    text-transform: uppercase;
+  }
+
+  .oot-collection__all {
+    grid-area: all;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 44px;
+    margin-block-start: 32px;
+    padding-inline: 16px;
+    border: 1px solid var(--oot-color-ink);
+  }
+
+  .oot-collection__all:hover .oot-button__arrow {
+    transform: translateX(4px);
+  }
+
+  .oot-collection__cards {
+    grid-area: cards;
+    display: flex;
+    gap: 12px;
+    margin: 32px -20px 0;
+    padding-inline: 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 20px;
+    scrollbar-width: none;
+  }
+
+  .oot-collection__card {
+    flex: 0 0 169px;
+    scroll-snap-align: start;
+  }
+
+  .oot-collection__link {
+    display: block;
+  }
+
+  .oot-collection__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    height: 26px;
+    padding-inline: 8px;
+    background: var(--oot-color-charcoal);
+    color: var(--oot-color-bone);
+  }
+
+  .oot-collection__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .oot-collection__desktop {
+    display: none;
+  }
+
+  .oot-collection__media {
+    position: relative;
+    aspect-ratio: 169 / 240;
+    overflow: hidden;
+  }
+
+  @media (min-width: 1024px) {
+    .oot-collection {
+      grid-template-areas: 'rule rule' 'heading all' 'cards cards';
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      padding: 61px 30px 60px;
+    }
+
+    .oot-collection__heading,
+    .oot-collection__all {
+      margin-block-start: 40px;
+    }
+
+    .oot-collection__all {
+      width: 240px;
+    }
+
+    .oot-collection__cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin: 40px 0 0;
+      padding: 0;
+      overflow: visible;
+    }
+
+    .oot-collection__mobile {
+      display: none;
+    }
+
+    .oot-collection__desktop {
+      display: inline;
+    }
+
+    .oot-collection__media {
+      aspect-ratio: 449 / 470;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "OoT collection",
+  "tag": "section",
+  "enabled_on": {
+    "templates": ["product"]
+  },
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "The collection"
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Compositions",
+      "info": "Products need a composition-N tag. Leave empty to use every product. The current product is always left out."
+    },
+    {
+      "type": "range",
+      "id": "card_count",
+      "label": "Cards",
+      "min": 2,
+      "max": 6,
+      "step": 1,
+      "default": 3
+    },
+    {
+      "type": "image_picker",
+      "id": "placeholder",
+      "label": "Card image when a product has none",
+      "info": "Leave empty to use the bundled carton photo."
+    },
+    {
+      "type": "text",
+      "id": "all_label",
+      "label": "Link label",
+      "info": "Leave empty to hide the link.",
+      "default": "All fragrance"
+    },
+    {
+      "type": "url",
+      "id": "all_link",
+      "label": "Link",
+      "info": "Leave empty for all products."
+    }
+  ],
+  "presets": [
+    {
+      "name": "OoT collection"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,360 @@
+{% comment %}
+  Section contract.
+  Brand story (Figma 14:3841 desktop panel | photo 1440×720, 14:3997 mobile photo over
+  panel). The panel is bone with the brand grid showing through gaps between bone
+  "plates"; the photo has the bone grid over it and a scent label bar for the current
+  composition, so this section swaps with the hero on a composition switch.
+  @example
+  <!-- Below the manifesto in templates/product.order-of-things.json -->
+{% endcomment %}
+
+{%- liquid
+  capture composition
+    render 'oot-composition', product: product
+  endcapture
+  assign composition = composition | strip | split: '|'
+  assign number = composition[0]
+  assign has_notes = false
+  if composition[2] != blank and composition[3] != blank and composition[4] != blank
+    assign has_notes = true
+  endif
+  assign points = section.settings.points | newline_to_br | split: '<br />'
+
+  # Mobile: the grid only shows inside these regions of the 390×520 panel (Figma
+  # "Brand Grid (masked around text)"). Each is left%|width%|top|height, then the
+  # grid's left%|width% so the whole-panel grid lines up inside the clipped region.
+  assign mobile_regions = '0|100|90|1|0|100,88.974|11.026|91|89|-806.977|906.977,0|100|180|46|0|100,73.333|26.667|226|134|-275|375,57.692|42.308|360|90|-136.364|236.364,0|100|450|1|0|100,57.692|15.897|451|69|-362.903|629.032' | split: ','
+-%}
+
+<div class="oot-story" data-oot-product-section data-section-id="{{ section.id }}">
+  <div class="oot-story__panel">
+    <div class="oot-story__grid-mobile" aria-hidden="true">
+      {%- for region in mobile_regions -%}
+        {%- assign r = region | split: '|' -%}
+        <div class="oot-story__region" style="left: {{ r[0] }}%; width: {{ r[1] }}%; top: {{ r[2] }}px; height: {{ r[3] }}px;">
+          {%- capture grid_style -%}inset: auto; left: {{ r[4] }}%; width: {{ r[5] }}%; top: -{{ r[2] }}px; height: 520px;{%- endcapture -%}
+          {% render 'oot-brand-grid', rows: 45, style: grid_style %}
+        </div>
+      {%- endfor -%}
+    </div>
+
+    <div class="oot-story__grid-desktop" aria-hidden="true">
+      {%- # The Brand Grid spans the whole 1440 section; this panel is its left half. -%}
+      {% render 'oot-brand-grid', rows: 60, style: 'right: -100%;' %}
+      <div class="oot-story__plate" style="left: 0; top: 0; width: 53.19%; height: 180px;"></div>
+      <div class="oot-story__plate" style="left: 53.33%; top: 0; width: 46.67%; height: 144px;"></div>
+      <div class="oot-story__plate" style="left: 0; top: 361px; width: 53.19%; height: 119px;"></div>
+      <div class="oot-story__plate" style="left: 0; top: 601px; width: 53.19%; height: 119px;"></div>
+      <div class="oot-story__plate" style="left: 84.58%; top: 601px; width: 15.42%; height: 119px;"></div>
+      {%- # Strong rules: the top edge, the middle row and the column at 383px. -%}
+      <div class="oot-story__strong oot-story__strong--top"></div>
+      <div class="oot-story__strong oot-story__strong--middle"></div>
+      <div class="oot-story__strong oot-story__strong--column"></div>
+    </div>
+
+    <h2 class="oot-h2 oot-story__heading">{{ section.settings.heading | escape }}</h2>
+    <p class="oot-body-m oot-story__body">{{ section.settings.body | escape }}</p>
+
+    {%- if section.settings.points != blank -%}
+      <ul class="oot-label oot-story__points">
+        {%- for point in points -%}
+          {%- assign point = point | strip -%}
+          {%- if point != blank -%}
+            <li>— {{ point | escape }}</li>
+          {%- endif -%}
+        {%- endfor -%}
+      </ul>
+    {%- endif -%}
+
+    {%- if has_notes and section.settings.show_notes -%}
+      <ul class="oot-label oot-story__notes">
+        <li>{{ 'oot.product.top' | t }}: {{ composition[2] | escape }}</li>
+        <li>{{ 'oot.product.heart' | t }}: {{ composition[3] | escape }}</li>
+        <li>{{ 'oot.product.base' | t }}: {{ composition[4] | escape }}</li>
+      </ul>
+    {%- endif -%}
+
+    <div class="oot-story__wordmark">
+      {% render 'oot-icon', name: 'wordmark', class: 'oot-story__wordmark-svg' %}
+    </div>
+  </div>
+
+  <div class="oot-story__media">
+    {% render 'oot-image',
+      image: section.settings.image,
+      fallback: 'oot-brand-story.jpg',
+      alt: section.settings.alt,
+      sizes: '(min-width: 1440px) 720px, (min-width: 1024px) 50vw, 100vw'
+    %}
+    {%- # Bone grid over the photo: the right half of the 1440 grid. -%}
+    {% render 'oot-brand-grid', tone: 'bone', style: 'left: -100%;', class: 'oot-story__photo-grid' %}
+    {%- if number != blank -%}
+      <p class="oot-label oot-story__label">
+        <span>{{ 'oot.story.scent' | t: number: number }}</span>
+        <span class="oot-story__label-title">
+          {{- product.title | escape -}}
+          {%- render 'oot-swatch', number: number -%}
+        </span>
+      </p>
+    {%- endif -%}
+  </div>
+</div>
+
+{% stylesheet %}
+  .oot-story {
+    display: flex;
+    flex-direction: column-reverse;
+    max-width: var(--oot-page-width);
+    margin-inline: auto;
+  }
+
+  .oot-story__panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 520px;
+    padding: 24px 20px 27px;
+    background: var(--oot-color-bone);
+  }
+
+  .oot-story__grid-mobile,
+  .oot-story__grid-desktop {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .oot-story__grid-desktop,
+  .oot-story__photo-grid {
+    display: none;
+  }
+
+  .oot-story__region {
+    position: absolute;
+    overflow: hidden;
+  }
+
+  .oot-story__grid-desktop {
+    overflow: hidden;
+  }
+
+  .oot-story__plate {
+    position: absolute;
+    background: var(--oot-color-bone);
+  }
+
+  .oot-story__strong {
+    position: absolute;
+    background: rgb(56 51 49 / 0.5);
+  }
+
+  .oot-story__strong--top,
+  .oot-story__strong--middle {
+    inset-inline: 0;
+    height: 1px;
+  }
+
+  .oot-story__strong--top {
+    top: 0;
+  }
+
+  .oot-story__strong--middle {
+    top: 360px;
+  }
+
+  .oot-story__strong--column {
+    inset-block: 0;
+    left: 53.19%;
+    width: 1px;
+  }
+
+  .oot-story__heading,
+  .oot-story__body,
+  .oot-story__points,
+  .oot-story__notes,
+  .oot-story__wordmark {
+    position: relative;
+  }
+
+  .oot-story__heading {
+    text-transform: uppercase;
+  }
+
+  .oot-story__body {
+    margin-block-start: 16px;
+  }
+
+  .oot-story__points,
+  .oot-story__notes {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .oot-story__points {
+    margin-block-start: 66px;
+  }
+
+  .oot-story__notes {
+    margin-block-start: 28px;
+  }
+
+  .oot-story__wordmark {
+    margin-block-start: auto;
+    padding-block-start: 76px;
+  }
+
+  .oot-story__wordmark-svg {
+    width: 150px;
+  }
+
+  .oot-story__media {
+    position: relative;
+    height: 420px;
+    overflow: hidden;
+  }
+
+  .oot-story__label {
+    position: absolute;
+    top: 197px;
+    inset-inline: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 28px;
+    padding-inline: 10px;
+    background: var(--oot-color-bone);
+  }
+
+  .oot-story__label-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  @media (min-width: 1024px) {
+    .oot-story {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      height: 720px;
+    }
+
+    .oot-story__panel {
+      display: block;
+      min-height: 0;
+      padding: 0;
+    }
+
+    .oot-story__grid-mobile,
+    .oot-story__notes {
+      display: none;
+    }
+
+    .oot-story__grid-desktop,
+    .oot-story__photo-grid {
+      display: block;
+    }
+
+    .oot-story__heading {
+      position: absolute;
+      top: 32px;
+      left: 32px;
+      width: 46.5%;
+    }
+
+    .oot-story__body {
+      position: absolute;
+      top: 32px;
+      left: 55.42%;
+      width: 40.28%;
+      margin: 0;
+    }
+
+    .oot-story__points {
+      position: absolute;
+      top: 392px;
+      left: 32px;
+      margin: 0;
+    }
+
+    .oot-story__wordmark {
+      position: absolute;
+      top: 653px;
+      left: 26px;
+      margin: 0;
+      padding: 0;
+    }
+
+    .oot-story__wordmark-svg {
+      width: 240px;
+    }
+
+    .oot-story__media {
+      height: auto;
+    }
+
+    .oot-story__label {
+      top: 331px;
+      right: auto;
+      left: 15.69%;
+      width: 62.5%;
+      height: 30px;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "OoT brand story",
+  "tag": "section",
+  "enabled_on": {
+    "templates": ["product"]
+  },
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "A fragrance that wears close to the skin."
+    },
+    {
+      "type": "textarea",
+      "id": "body",
+      "label": "Text",
+      "default": "Every composition is written complete first, then adapted to sit in its format. Fragrance is the reason the carton exists, not a finishing note."
+    },
+    {
+      "type": "textarea",
+      "id": "points",
+      "label": "Points",
+      "info": "One per line.",
+      "default": "Composed in France & Italy\nFine-fragrance standard\nSix compositions"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_notes",
+      "label": "Show the scent notes on mobile",
+      "info": "Only for products with top:, heart: and base: tags.",
+      "default": true
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Photo",
+      "info": "Leave empty to use the bundled photo."
+    },
+    {
+      "type": "text",
+      "id": "alt",
+      "label": "Alt text",
+      "info": "Used when the photo has no alt text of its own.",
+      "default": "A hand raised to the lips"
+    }
+  ],
+  "presets": [
+    {
+      "name": "OoT brand story"
+    }
+  ]
+}
+{% endschema %}

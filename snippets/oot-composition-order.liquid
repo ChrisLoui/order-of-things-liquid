@@ -1,0 +1,33 @@
+{%- doc -%}
+  Puts products in composition order (round 1's sortByComposition). Outputs one entry
+  per product that has a composition-N tag, joined by commas and sorted:
+
+    NNN~index~status     e.g. 001~4~available,002~0~available,003~1~coming-soon
+
+  - NNN: the composition number, zero-padded so text sorting is numeric
+  - index: the product's position in the products passed in
+  - status: as oot-composition reports it
+
+  Collections paginate to 50 products by default, plenty for the compositions.
+
+  @param {product[]} products - Products to order, e.g. a collection's products
+
+  @example
+  {%- capture entries -%}{%- render 'oot-composition-order', products: collection.products -%}{%- endcapture -%}
+  {%- assign entries = entries | strip | split: ',' -%}
+{%- enddoc -%}
+
+{%- liquid
+  assign entries = ''
+  for item in products
+    capture data
+      render 'oot-composition', product: item
+    endcapture
+    assign data = data | strip | split: '|'
+    if data[0] != blank
+      assign key = data[0] | prepend: '000' | slice: -3, 3
+      assign entries = entries | append: key | append: '~' | append: forloop.index0 | append: '~' | append: data[1] | append: ','
+    endif
+  endfor
+  echo entries | split: ',' | sort | join: ','
+-%}

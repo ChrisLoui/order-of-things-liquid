@@ -61,6 +61,9 @@
       "added": "Added to cart",
       "error": "Couldn't add to cart. Please try again."
     },
+    "story": {
+      "scent": "Scent No.{{ number }}"
+    },
     "notes": {
       "heading": "Notes",
       "subheading": "How it wears over a day",

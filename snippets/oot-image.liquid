@@ -1,22 +1,23 @@
 {% doc %}
-  One gallery photo, filling its positioned host with object-fit: cover. The source is
-  the first that exists: the product's media at this position, the block's image, then
-  the bundled photo (assets/oot-gallery-N.jpg) shipped with the theme.
+  A photo filling its positioned host with object-fit: cover. The source is the first
+  that exists: product media, the merchant's image_picker choice, then a photo bundled
+  with the theme in assets/.
 
   The first photo appears in both the desktop grid and the mobile carousel, and CSS
   hides one. Pass hidden_on so that copy's <picture> serves a blank pixel at the other
   breakpoint: each device then downloads only the image it shows.
 
-  @param {object} [media] - Product media at this position
-  @param {image} [image] - The block's image_picker value
-  @param {number} position - 1-based position, for the bundled fallback
+  @param {object} [media] - Product media, used first
+  @param {image} [image] - An image_picker value
+  @param {string} fallback - Bundled asset filename, e.g. 'oot-gallery-1.jpg'
   @param {string} alt - Alt text when the image has none (the caption)
   @param {string} sizes - The sizes attribute for this layout slot
   @param {boolean} [priority] - The LCP image: eager, high fetch priority
   @param {string} [hidden_on] - 'mobile' or 'desktop': where CSS hides this copy
+  @param {string} [class] - Extra class on the <img>
 
   @example
-  {% render 'oot-gallery-image', image: block.settings.image, position: 1, alt: 'Studio front', sizes: '100vw', priority: true, hidden_on: 'desktop' %}
+  {% render 'oot-image', image: block.settings.image, fallback: 'oot-gallery-1.jpg', alt: 'Studio front', sizes: '100vw', priority: true, hidden_on: 'desktop' %}
 {% enddoc %}
 
 {%- liquid
@@ -24,6 +25,8 @@
   if media
     assign source = media.preview_image
   endif
+
+  assign image_class = 'oot-image ' | append: class | strip
 
   assign loading = 'lazy'
   assign fetchpriority = 'auto'
@@ -45,19 +48,18 @@
         loading: loading,
         fetchpriority: fetchpriority,
         alt: alt_text,
-        class: 'oot-gallery-image'
+        class: image_class
     }}
   {%- else -%}
-    {%- # Bundled photos are already web-sized (1200–1600px), so one size serves every slot. -%}
-    {%- assign file = 'oot-gallery-' | append: position | append: '.jpg' -%}
+    {%- # Bundled photos are already web-sized (1200–2400px), so one size serves every slot. -%}
     <img
-      src="{{ file | asset_url }}"
+      src="{{ fallback | asset_url }}"
       alt="{{ alt | escape }}"
       width="1200"
       height="1600"
       loading="{{ loading }}"
       fetchpriority="{{ fetchpriority }}"
-      class="oot-gallery-image"
+      class="{{ image_class }}"
     >
   {%- endif -%}
 {%- endcapture -%}
@@ -75,7 +77,7 @@
 {%- endif -%}
 
 {% stylesheet %}
-  .oot-gallery-image {
+  .oot-image {
     position: absolute;
     inset: 0;
     width: 100%;

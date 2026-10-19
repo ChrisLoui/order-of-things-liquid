@@ -308,7 +308,9 @@ let latestSwitch = 0;
 function productSectionIds() {
   return Array.from(document.querySelectorAll('[data-oot-product-section]'), (el) => el.dataset.sectionId)
     .filter(Boolean)
-    .slice(0, 5); // The Section Rendering API renders at most 5 sections per request.
+    // The Section Rendering API renders at most 5 sections per request. In use: 4 of 5
+    // (hero, brand story, collection, sticky bar), so one more product section fits.
+    .slice(0, 5);
 }
 
 /** Keeps ?view= (alternate template preview) on links until the template is assigned. */
