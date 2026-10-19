@@ -22,6 +22,12 @@
   --oot-color-composition-5: #5b3a5e;
   --oot-color-composition-6: #5e6e6a;
 
+  /* Outline states shared by the scent tiles, purchase options and frequency tiles
+     (Figma Option Tile 14:2535): inactive at 14% ink, 60% on hover, unavailable 8%. */
+  --oot-outline-rest: rgb(56 51 49 / 0.14);
+  --oot-outline-hover: rgb(56 51 49 / 0.6);
+  --oot-outline-muted: rgb(56 51 49 / 0.08);
+
   --oot-gutter: 20px;
   --oot-page-width: 1440px;
 }
@@ -140,6 +146,19 @@ img {
   .oot-button__arrow {
     transition: none;
   }
+}
+
+/* The caption row that heads each buy-panel block: a label at the start, the current
+   value or a note at the end ("Scent / No.1 Woody Vetiver"). */
+
+.oot-panel-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.oot-panel-heading > :last-child {
+  text-align: end;
 }
 
 /* Layout helpers */

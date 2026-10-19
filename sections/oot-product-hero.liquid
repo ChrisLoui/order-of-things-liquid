@@ -225,7 +225,7 @@
 
       {%- if entries.size > 0 -%}
         <div class="oot-scent">
-          <div class="oot-scent__heading oot-caption">
+          <div class="oot-panel-heading oot-caption">
             <p>{{ 'oot.product.scent' | t }}</p>
             <p>{{ scent_label | escape }}</p>
           </div>
@@ -658,16 +658,6 @@
 
   /* Scent selector (Figma Composition Tiles 14:3782) */
 
-  .oot-scent__heading {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-  }
-
-  .oot-scent__heading p:last-child {
-    text-align: end;
-  }
-
   .oot-scent__tiles {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -681,12 +671,12 @@
     gap: 10px;
     height: 48px;
     padding-inline: 14px;
-    border: 1px solid rgb(56 51 49 / 0.14);
+    border: 1px solid var(--oot-outline-rest);
     background: var(--oot-color-bone);
   }
 
   a.oot-scent__tile:hover {
-    border-color: rgb(56 51 49 / 0.6);
+    border-color: var(--oot-outline-hover);
   }
 
   .oot-scent__tile--selected,
@@ -696,7 +686,7 @@
   }
 
   .oot-scent__tile--unavailable {
-    border-color: rgb(56 51 49 / 0.08);
+    border-color: var(--oot-outline-muted);
   }
 
   .oot-scent__swatch--muted {
