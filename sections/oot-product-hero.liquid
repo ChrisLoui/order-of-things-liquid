@@ -690,6 +690,11 @@
     border-color: var(--oot-outline-muted);
   }
 
+  /* No ring when a click moved focus to the new tile (oot.js); keyboard keeps it. */
+  .oot-scent__tile[data-oot-pointer-focus]:focus-visible {
+    outline: none;
+  }
+
   .oot-scent__swatch--muted {
     opacity: 0.4;
   }

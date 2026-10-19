@@ -400,7 +400,7 @@ function fetchSections(href) {
   return sectionHtmlCache.get(key);
 }
 
-async function switchProduct(href, { push, scrollTop = false }) {
+async function switchProduct(href, { push, scrollTop = false, pointer = false }) {
   const switchId = ++latestSwitch;
   const target = withCurrentView(href);
 
@@ -430,7 +430,24 @@ async function switchProduct(href, { push, scrollTop = false }) {
   if (title) document.title = title;
   if (push) history.pushState({ ootProduct: true }, '', target);
   if (scrollTop) window.scrollTo({ top: 0, behavior: 'instant' });
-  document.querySelector('[data-oot-switch][aria-current="page"]')?.focus({ preventScroll: true });
+  focusCurrentTile(pointer);
+}
+
+/**
+ * The clicked tile was replaced, so focus moves to the new selected tile. After a
+ * pointer switch it gets no focus ring: Safari ignores focusVisible, so the tile is
+ * also marked until the next keydown or blur, and the scent tile CSS hides the ring.
+ */
+function focusCurrentTile(pointer) {
+  const tile = document.querySelector('[data-oot-switch][aria-current="page"]');
+  if (!tile) return;
+  if (pointer) {
+    tile.setAttribute('data-oot-pointer-focus', '');
+    const unmark = () => tile.removeAttribute('data-oot-pointer-focus');
+    tile.addEventListener('keydown', unmark, { once: true });
+    tile.addEventListener('blur', unmark, { once: true });
+  }
+  tile.focus({ preventScroll: true, focusVisible: !pointer });
 }
 
 /** @param {Event} event */
@@ -453,7 +470,8 @@ if (document.querySelector('[data-oot-product-section]')) {
     if (!link) return;
     event.preventDefault();
     if (link.getAttribute('aria-current') === 'page') return;
-    switchProduct(link.href, { push: true, scrollTop: link.dataset.ootScroll === 'top' });
+    // A keyboard-activated link reports click detail 0.
+    switchProduct(link.href, { push: true, scrollTop: link.dataset.ootScroll === 'top', pointer: event.detail > 0 });
   });
 
   // Fetch on intent, so the click usually finds the response already cached.
@@ -465,6 +483,6 @@ if (document.querySelector('[data-oot-product-section]')) {
   document.addEventListener('focusin', prefetch);
 
   window.addEventListener('popstate', (event) => {
-    if (event.state?.ootProduct) switchProduct(window.location.href, { push: false });
+    if (event.state?.ootProduct) switchProduct(window.location.href, { push: false, pointer: true });
   });
 }
