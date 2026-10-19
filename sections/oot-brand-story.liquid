@@ -15,7 +15,7 @@
   assign composition = composition | strip | split: '|'
   assign number = composition[0]
   assign has_notes = false
-  if composition[2] != blank and composition[3] != blank and composition[4] != blank
+  if composition[7] == 'true'
     assign has_notes = true
   endif
   assign points = section.settings.points | newline_to_br | split: '<br />'

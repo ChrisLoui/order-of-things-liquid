@@ -3,8 +3,8 @@
   pipe-delimited string, so every consumer shares one parser (Liquid snippets can't
   return values, but a capture around a render can):
 
-    number|status|top|heart|base|label|size
-    e.g. 1|available|Bergamot|Green Herbs|Vetiver|No.1 Woody Vetiver|50 ml
+    number|status|top|heart|base|label|size|notes
+    e.g. 1|available|Bergamot|Green Herbs|Vetiver|No.1 Woody Vetiver|50 ml|true
 
   - number: from the `composition-N` tag, blank when the product has none
   - status: `coming-soon` (tagged, unreleased), `available`, or `sold-out`
@@ -13,6 +13,8 @@
   - label: "No.N Title" as the scent header, carton and bar print it (the title alone
     without a number)
   - size: the first available variant's title ("50 ml"), blank for "Default Title"
+  - notes: `true` when top, heart and base are all set, else `false`. Always written,
+    so it stays the last field: read it as `composition[7] == 'true'`
 
   Trailing blank fields drop out of `split`, so read them as blank, never by count.
   Product titles must not contain "|".
@@ -60,10 +62,15 @@
     assign label = 'No.' | append: number | append: ' ' | append: product.title
   endif
 
+  assign notes = false
+  if top != blank and heart != blank and base != blank
+    assign notes = true
+  endif
+
   assign size = product.selected_or_first_available_variant.title
   if size == 'Default Title'
     assign size = ''
   endif
 
-  echo number | append: '|' | append: status | append: '|' | append: top | append: '|' | append: heart | append: '|' | append: base | append: '|' | append: label | append: '|' | append: size
+  echo number | append: '|' | append: status | append: '|' | append: top | append: '|' | append: heart | append: '|' | append: base | append: '|' | append: label | append: '|' | append: size | append: '|' | append: notes
 -%}
