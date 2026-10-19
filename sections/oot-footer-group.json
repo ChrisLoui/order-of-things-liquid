@@ -1,0 +1,75 @@
+{
+  "type": "footer",
+  "name": "Order of Things footer",
+  "sections": {
+    "footer": {
+      "type": "oot-footer",
+      "blocks": {
+        "column_care": {
+          "type": "column",
+          "settings": {
+            "title": "Customer care",
+            "short_title": "Help",
+            "menu": "customer-care"
+          }
+        },
+        "column_company": {
+          "type": "column",
+          "settings": {
+            "title": "The company",
+            "short_title": "Company",
+            "menu": "the-company"
+          }
+        },
+        "column_legal": {
+          "type": "column",
+          "settings": {
+            "title": "Legal",
+            "short_title": "Legal",
+            "menu": "legal"
+          }
+        },
+        "social_instagram": {
+          "type": "social",
+          "settings": {
+            "label": "Instagram",
+            "link": ""
+          }
+        },
+        "social_tiktok": {
+          "type": "social",
+          "settings": {
+            "label": "TikTok",
+            "link": ""
+          }
+        },
+        "social_youtube": {
+          "type": "social",
+          "settings": {
+            "label": "YouTube",
+            "link": ""
+          }
+        }
+      },
+      "block_order": [
+        "column_care",
+        "column_company",
+        "column_legal",
+        "social_instagram",
+        "social_tiktok",
+        "social_youtube"
+      ],
+      "settings": {
+        "description": "Six eaux de parfum, written to fine-fragrance standard and blended in France & Italy.",
+        "copyright": "© Order of Things",
+        "regions": "Australia · France · Italy",
+        "regions_mobile": "AU · FR · IT",
+        "currency": "AUD / USD",
+        "currency_note": "(auto)"
+      }
+    }
+  },
+  "order": [
+    "footer"
+  ]
+}

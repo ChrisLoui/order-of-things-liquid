@@ -64,6 +64,9 @@
     "story": {
       "scent": "Scent No.{{ number }}"
     },
+    "footer": {
+      "nav": "Footer"
+    },
     "notes": {
       "heading": "Notes",
       "subheading": "How it wears over a day",

@@ -1,0 +1,372 @@
+{% comment %}
+  Section contract.
+  Site footer for the Order of Things layout (Figma Footer/Desktop 14:3881 1440×540,
+  Footer/Mobile 14:4051 390×556): symbol and description, three link columns from
+  menus, the full-width wordmark, then copyright, socials and currency. Mobile uses
+  shorter column titles and bottom-row copy.
+  @example
+  <!-- Lives in sections/oot-footer-group.json, rendered by layout/oot.liquid -->
+{% endcomment %}
+
+{%- liquid
+  assign columns = section.blocks | where: 'type', 'column'
+  assign socials = section.blocks | where: 'type', 'social'
+-%}
+
+<div class="oot-footer">
+  <div class="oot-footer__inner">
+    <div class="oot-footer__top">
+      <div class="oot-footer__brand">
+        {% render 'oot-icon', name: 'logo-symbol', class: 'oot-footer__symbol' %}
+        {%- if section.settings.description != blank -%}
+          <p class="oot-body-m oot-footer__description">{{ section.settings.description | escape }}</p>
+        {%- endif -%}
+      </div>
+
+      {%- if columns.size > 0 -%}
+        <nav class="oot-footer__nav" aria-label="{{ 'oot.footer.nav' | t }}">
+          {%- for block in columns -%}
+            {%- assign menu = linklists[block.settings.menu] -%}
+            <div class="oot-footer__column" {{ block.shopify_attributes }}>
+              <h3 class="oot-caption oot-footer__column-title">
+                <span class="oot-footer__mobile">{{ block.settings.short_title | default: block.settings.title | escape }}</span>
+                <span class="oot-footer__desktop">{{ block.settings.title | escape }}</span>
+              </h3>
+              {%- if menu.links.size > 0 -%}
+                <ul class="oot-body-m oot-footer__links">
+                  {%- for link in menu.links -%}
+                    <li><a href="{{ link.url }}">{{ link.title | escape }}</a></li>
+                  {%- endfor -%}
+                </ul>
+              {%- endif -%}
+            </div>
+          {%- endfor -%}
+        </nav>
+      {%- endif -%}
+    </div>
+
+    <div class="oot-footer__wordmark">
+      {% render 'oot-icon', name: 'wordmark', class: 'oot-footer__wordmark-svg' %}
+    </div>
+
+    <div class="oot-caption oot-footer__bottom">
+      {%- if socials.size > 0 -%}
+        <ul class="oot-footer__socials">
+          {%- for block in socials -%}
+            <li {{ block.shopify_attributes }}>
+              {%- if block.settings.link != blank -%}
+                <a href="{{ block.settings.link }}">{{ block.settings.label | escape }}</a>
+              {%- else -%}
+                {{- block.settings.label | escape -}}
+              {%- endif -%}
+            </li>
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
+      {%- comment -%}
+        On desktop this wrapper is display: contents so its two spans join the
+        three-column row. A contents box draws nothing, so opacity sits on the spans.
+      {%- endcomment -%}
+      <p class="oot-footer__meta">
+        <span class="oot-footer__copyright">
+          {{- section.settings.copyright | escape }} ·
+          <span class="oot-footer__mobile">{{ section.settings.regions_mobile | default: section.settings.regions | escape }}</span>
+          <span class="oot-footer__desktop">{{ section.settings.regions | escape }}</span>
+        </span>
+        <span class="oot-footer__currency">
+          {{- section.settings.currency | escape -}}
+          {%- if section.settings.currency_note != blank -%}
+            <span class="oot-footer__desktop"> {{ section.settings.currency_note | escape }}</span>
+          {%- endif -%}
+        </span>
+      </p>
+    </div>
+  </div>
+</div>
+
+{% stylesheet %}
+  .oot-footer {
+    --oot-footer-hairline: rgb(242 237 230 / 0.4);
+    background: var(--oot-color-charcoal);
+    color: var(--oot-color-bone);
+  }
+
+  .oot-footer__inner {
+    max-width: var(--oot-page-width);
+    margin-inline: auto;
+    padding: 40px 20px 18px;
+  }
+
+  .oot-footer__top {
+    border-block-end: 1px solid var(--oot-footer-hairline);
+  }
+
+  .oot-footer__symbol {
+    width: 56px;
+  }
+
+  .oot-footer__description {
+    margin-block-start: 34px;
+    padding-block-end: 35px;
+    opacity: 0.85;
+  }
+
+  .oot-footer__nav {
+    display: grid;
+    grid-template-columns: 108fr 121fr 121fr;
+    border-block-start: 1px solid var(--oot-footer-hairline);
+  }
+
+  .oot-footer__column {
+    padding-block: 31px 33px;
+  }
+
+  .oot-footer__column + .oot-footer__column {
+    padding-inline-start: 12px;
+    border-inline-start: 1px solid var(--oot-footer-hairline);
+  }
+
+  .oot-footer__column-title {
+    margin: 0;
+    font-weight: 500;
+    opacity: 0.6;
+  }
+
+  .oot-footer__links {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-block-start: 18px;
+  }
+
+  .oot-footer__wordmark {
+    padding-block: 32px;
+    border-block-end: 1px solid var(--oot-footer-hairline);
+  }
+
+  .oot-footer__wordmark-svg {
+    width: 100%;
+  }
+
+  .oot-footer__bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-block-start: 24px;
+  }
+
+  .oot-footer__socials {
+    display: flex;
+    gap: 24px;
+  }
+
+  .oot-footer__meta {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .oot-footer__copyright,
+  .oot-footer__currency {
+    opacity: 0.6;
+  }
+
+  .oot-footer__desktop {
+    display: none;
+  }
+
+  .oot-footer a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  @media (min-width: 1024px) {
+    .oot-footer__inner {
+      padding: 0 40px 34px;
+    }
+
+    .oot-footer__top {
+      display: grid;
+      grid-template-columns: 560fr 267fr 267fr 266fr;
+    }
+
+    .oot-footer__brand {
+      padding-block-start: 55px;
+    }
+
+    .oot-footer__symbol {
+      width: 72px;
+    }
+
+    .oot-footer__description {
+      max-width: 320px;
+      margin-block-start: 27px;
+      padding-block-end: 0;
+    }
+
+    .oot-footer__nav {
+      grid-column: span 3;
+      grid-template-columns: subgrid;
+      border-block-start: 0;
+    }
+
+    .oot-footer__column,
+    .oot-footer__column + .oot-footer__column {
+      padding: 57px 0 57px 32px;
+      border-inline-start: 1px solid var(--oot-footer-hairline);
+    }
+
+    .oot-footer__links {
+      gap: 8px;
+      margin-block-start: 17px;
+    }
+
+    .oot-footer__wordmark {
+      padding-block: 41px;
+    }
+
+    .oot-footer__bottom {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      align-items: center;
+      margin-block-start: 20px;
+    }
+
+    .oot-footer__socials {
+      order: 2;
+      justify-content: center;
+    }
+
+    .oot-footer__meta {
+      display: contents;
+    }
+
+    .oot-footer__copyright {
+      order: 1;
+    }
+
+    .oot-footer__currency {
+      order: 3;
+      text-align: end;
+    }
+
+    .oot-footer__mobile {
+      display: none;
+    }
+
+    .oot-footer__desktop {
+      display: inline;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "OoT footer",
+  "tag": "footer",
+  "enabled_on": {
+    "groups": ["footer"]
+  },
+  "settings": [
+    {
+      "type": "textarea",
+      "id": "description",
+      "label": "Description",
+      "default": "Six eaux de parfum, written to fine-fragrance standard and blended in France & Italy."
+    },
+    {
+      "type": "header",
+      "content": "Bottom row"
+    },
+    {
+      "type": "text",
+      "id": "copyright",
+      "label": "Copyright",
+      "default": "© Order of Things"
+    },
+    {
+      "type": "text",
+      "id": "regions",
+      "label": "Regions",
+      "default": "Australia · France · Italy"
+    },
+    {
+      "type": "text",
+      "id": "regions_mobile",
+      "label": "Regions on mobile",
+      "info": "Leave empty to use the line above.",
+      "default": "AU · FR · IT"
+    },
+    {
+      "type": "text",
+      "id": "currency",
+      "label": "Currency",
+      "default": "AUD / USD"
+    },
+    {
+      "type": "text",
+      "id": "currency_note",
+      "label": "Currency note on desktop",
+      "default": "(auto)"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "column",
+      "name": "Link column",
+      "limit": 3,
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Title",
+          "default": "Customer care"
+        },
+        {
+          "type": "text",
+          "id": "short_title",
+          "label": "Title on mobile",
+          "info": "Leave empty to use the title above."
+        },
+        {
+          "type": "link_list",
+          "id": "menu",
+          "label": "Menu",
+          "info": "Leave empty to show the title only."
+        }
+      ]
+    },
+    {
+      "type": "social",
+      "name": "Social link",
+      "limit": 6,
+      "settings": [
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Label",
+          "default": "Instagram"
+        },
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Link",
+          "info": "Leave empty to show the label as text."
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "OoT footer",
+      "blocks": [
+        { "type": "column", "settings": { "title": "Customer care", "short_title": "Help" } },
+        { "type": "column", "settings": { "title": "The company", "short_title": "Company" } },
+        { "type": "column", "settings": { "title": "Legal", "short_title": "Legal" } },
+        { "type": "social", "settings": { "label": "Instagram" } },
+        { "type": "social", "settings": { "label": "TikTok" } },
+        { "type": "social", "settings": { "label": "YouTube" } }
+      ]
+    }
+  ]
+}
+{% endschema %}
