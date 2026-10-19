@@ -168,7 +168,7 @@
       <div class="oot-carousel__bar">
         <p class="oot-carousel__status" aria-live="polite">
           <span class="oot-label-mobile"><span data-counter>01</span> / {{ photo_count_padded }}</span>
-          <span class="oot-label" data-caption>{{ photos.first.settings.caption | escape }}</span>
+          <span class="oot-label" data-caption-label>{{ photos.first.settings.caption | escape }}</span>
         </p>
         <div class="oot-carousel__dots" aria-hidden="true">
           {%- for block in photos -%}

@@ -19,7 +19,7 @@ class OotCarousel extends HTMLElement {
     this.prev = this.querySelector('[data-prev]');
     this.next = this.querySelector('[data-next]');
     this.counter = this.querySelector('[data-counter]');
-    this.caption = this.querySelector('[data-caption]');
+    this.caption = this.querySelector('[data-caption-label]');
     this.dots = Array.from(this.querySelectorAll('.oot-carousel__dot'));
     this.index = 0;
 
