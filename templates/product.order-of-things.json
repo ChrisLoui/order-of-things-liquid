@@ -1,5 +1,10 @@
 {
   "layout": "oot",
-  "sections": {},
-  "order": []
+  "sections": {
+    "main": {
+      "type": "oot-product-hero",
+      "settings": {}
+    }
+  },
+  "order": ["main"]
 }

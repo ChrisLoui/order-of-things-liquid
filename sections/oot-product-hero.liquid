@@ -1,0 +1,21 @@
+{% comment %}
+  Section contract.
+  Product hero: gallery and buy panel for the current product. Stub for now, so the
+  template has its required main section; the next task builds it out.
+  @example
+  <!-- Main section of templates/product.order-of-things.json -->
+{% endcomment %}
+
+<section class="oot-container">
+  <h1 class="oot-h1">{{ product.title | escape }}</h1>
+</section>
+
+{% schema %}
+{
+  "name": "OoT product hero",
+  "tag": "div",
+  "enabled_on": {
+    "templates": ["product"]
+  }
+}
+{% endschema %}
