@@ -1,4 +1,5 @@
-CLAUDE.md
+README.md
+NOTES.txt
 AGENTS.md
-NOTES-LIQUID.txt
+docs/**
 .git/**

@@ -1,0 +1,149 @@
+ORDER OF THINGS: LIQUID VERSION, WORK NOTES
+===========================================
+
+Task:    Turn the same Figma product page into Liquid, in a Shopify theme.
+Theme:   "Order of Things - Liquid test" (a copy of Horizon, not published)
+Store:   oot-test-environment.myshopify.com
+Repo:    https://github.com/ChrisLoui/order-of-things-liquid
+Round 1: https://order-of-things-headless.vercel.app/products/no-1-woody-vetiver
+
+TIME LOG (Oct 19, PHT)
+----------------------
+2:41 - 3:49 PM   1 h 8 min    Build
+4:44 - 6:29 PM   1 h 45 min   QA and fixes
+(3:49 - 4:44 break, not counted)
+
+2:41  duplicated the Horizon theme, pulled it
+2:54  Planned the build
+3:02  Page layout, colors and fonts, header and menu
+3:07  Product template set up, live preview running
+3:28  Product hero: gallery, mobile carousel, buy panel, scent picker that
+      switches without reloading the page
+3:36  Add to cart, subscribe & save, scent notes chart, assurances, accordion
+3:39  Sticky buy bar
+3:44  Manifesto, brand story, six cartons, the rest of the collection
+3:48  Footer
+3:49  Cleanup pass, Theme Check clean
+4:44  QA in the browser and the theme editor
+5:19  Fixed the mobile carousel losing its first photo
+5:43  Smooth accordion in every browser
+6:08  Fixed the double border on the selected scent
+6:14  Faster scent switching (loads the other scents in the background)
+
+6:29  QA done
+
+TOTAL: ~2 h 53 min
+
+
+WHAT'S BUILT
+------------
+- The whole Figma page in Liquid: header, gallery (grid on desktop, swipe
+  carousel on mobile), buy panel, scent picker, subscribe & save, add to
+  cart, scent notes chart, assurances, details accordion, sticky buy bar,
+  manifesto, brand story, six cartons, the rest of the collection, footer.
+- Switching scents doesn't reload the page. It swaps the product sections
+  with Shopify's Section Rendering API and updates the URL, and still works
+  as a normal link without JavaScript.
+- Add to cart uses Shopify's AJAX cart and updates the cart count in the
+  header without a reload.
+- Subscribe & save reads the product's selling plans, so it works for real
+  once a subscription app is installed. Until then it's the design only,
+  like round 1.
+- Desktop (1440) and mobile (390) as designed. Theme Check is clean for all
+  my files.
+
+
+WHAT I DECIDED AND WHY
+----------------------
+- I didn't touch the store's current theme. I worked on a duplicate of
+  Horizon ("Order of Things - Liquid test"), so the original stays as it was
+  and you can compare the two or delete mine anytime. Inside the copy I
+  also didn't edit Horizon's own files. Everything I made starts with "oot-"
+  and the page has its own layout, so the rest of the theme works the same
+  as before and it's easy to see what I built. The only Horizon file I added
+  to is the translations file (my own "oot" block). To remove the page, just
+  delete the oot- files.
+- Everything on the page can be edited in the theme editor without code:
+  text, photos, on/off toggles, and blocks like photos, assurances, accordion
+  rows and footer columns that can be added, removed or moved around. Product
+  info (title, price, notes, stock) comes from the product itself in the
+  admin.
+- The header and footer links come from Shopify menus, so they can be changed
+  in Content > Menus. Search, Login and Cart go to Shopify's real pages
+  instead of "#" placeholders, and Search and Login can be hidden from the
+  theme editor.
+
+
+NOT IN THE FIGMA (NOTED, NOT BUILT)
+-----------------------------------
+- Mobile menu: the menu button is in the design, but the open menu isn't.
+- Home, search, cart, account, collection and policy pages: not designed,
+  so they still use Horizon's default look. Only the product page is in the
+  Figma. Horizon shows the coming-soon scents as "Sold out" because it
+  doesn't know about our coming-soon tag. My collection section on the
+  product page shows them as "Soon".
+- Footer link pages: the store only has a Privacy policy, so the other
+  footer links (Contact, FAQ, Shipping, Returns, Terms, Discover, Concierge,
+  Research, Cookies) go to the home page for now, which is Horizon's default
+  home page. Once those pages or policies exist, the links can be changed in
+  Content > Menus, no code needed.
+
+
+CONTENT NEEDED FROM THE CLIENT
+------------------------------
+- "The composition" text in the details section is only written for No.1
+  in the design. Each product can have its own text in a product metafield
+  (custom.composition_intro). Until it's filled in, the text from the theme
+  editor is shown.
+- Photos for each composition: only the No.1 photos were provided. The
+  gallery uses the product's own images first once they're uploaded.
+- Prices show $ because the store currency is USD. They'll show A$
+  automatically once the store owner switches the currency to AUD.
+- Pilat fonts: Archivo is standing in, and the fonts are set in one snippet
+  (oot-fonts) so they're easy to swap.
+
+
+CHALLENGES
+----------
+Most of these are Liquid rules I ran into while building:
+
+1. Snippets can't return a value. I needed the scent info (number, status,
+   notes) in several sections, and I didn't want to copy the same code into
+   each one. So one snippet reads the product tags, and every section
+   captures its output. One place to fix if the tags ever change.
+2. Uploading a new section and the template that uses it at the same time
+   sometimes failed, because the template got there first. Saving the
+   template again fixed it. Shopify also won't accept an empty template, so
+   it needs at least one section from the start.
+3. Small Liquid surprises that cost me time:
+   - Reassigning the loop variable inside a for loop doesn't work, so every
+     scent tile showed "No.0" until I used a new variable name.
+   - Extra spaces from the {% doc %} comment block ended up in the captured
+     output, so I had to use the trimming version ({%- doc -%}).
+   - You can't use filters inside [ ] lookups or render arguments. You have
+     to build the value in a variable first.
+   - split quietly drops empty values at the end, so I can't count fields
+     from the end.
+
+
+QA FIXES
+--------
+1. Mobile carousel: the first photo disappeared after pressing next and then
+   back. The caption under the carousel and the slides used the same
+   attribute, so the script was writing the caption into slide 1. I gave the
+   caption its own attribute.
+2. The details accordion opened instantly in Safari and Firefox. I first used
+   a newer CSS feature that only animates in recent Chrome. Replaced it with a
+   small script that animates the height the same way as the Next.js version
+   (200ms), works in every browser, and still opens normally without
+   JavaScript.
+3. After clicking a scent, the new tile showed a double border. Switching
+   replaces the panel, so the script moves focus to the new tile (so keyboard
+   and screen reader users don't lose their place), and Safari drew the
+   keyboard focus ring for it. Now the ring only shows when you switch with
+   the keyboard.
+4. Switching scents felt slower than the Next.js version. Next.js loaded all
+   the scents in advance, but here a scent only loaded when you hovered its
+   tile. Now the other scents load in the background once the page is idle
+   (skipped on slow connections or data saver). Click to switch went from
+   about 760 ms to about 15 ms on the local preview.
