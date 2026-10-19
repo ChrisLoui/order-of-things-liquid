@@ -117,7 +117,7 @@ To use it for real, push it to an unpublished theme (`shopify theme push --unpub
 - **Currency:** prices use `| money`, so the page shows A$ once the store currency is AUD.
 - **Quality:** `shopify theme check` reports 0 offenses for every `oot-*` file.
 
-Decisions, challenges and the time log are in [`NOTES.txt`](NOTES.txt).
+Decisions, challenges and the time log are in [`NOTES-LIQUID.txt`](NOTES-LIQUID.txt).
 
 <div align="center">
 <br />
