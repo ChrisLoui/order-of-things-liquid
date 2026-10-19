@@ -366,6 +366,8 @@ customElements.define('oot-sticky-bar', OotStickyBar);
  * new page, as a normal navigation would; scent tiles keep the scroll position.
  */
 const sectionHtmlCache = new Map();
+// Responses carry availability, so a cached composition is refetched after 5 minutes.
+const SECTION_CACHE_MS = 5 * 60 * 1000;
 let latestSwitch = 0;
 
 function productSectionIds() {
@@ -389,15 +391,35 @@ function fetchSections(href) {
   url.searchParams.set('sections', productSectionIds().join(','));
   const key = url.toString();
 
-  if (!sectionHtmlCache.has(key)) {
-    const request = fetch(key).then((response) => {
-      if (!response.ok) throw new Error(`Section request failed: ${response.status}`);
-      return response.json();
+  const cached = sectionHtmlCache.get(key);
+  if (cached && Date.now() - cached.time < SECTION_CACHE_MS) return cached.request;
+
+  const request = fetch(key).then((response) => {
+    if (!response.ok) throw new Error(`Section request failed: ${response.status}`);
+    return response.json();
+  });
+  request.catch(() => {
+    if (sectionHtmlCache.get(key)?.request === request) sectionHtmlCache.delete(key);
+  });
+  sectionHtmlCache.set(key, { request, time: Date.now() });
+  return request;
+}
+
+/**
+ * Fetches every a[data-oot-prefetch] target (the scent tiles) once the page is idle,
+ * as round 1 did, so a switch rarely waits on the network. Other switch links fetch on
+ * hover or focus. Skipped when the visitor saves data or is on 2G.
+ */
+function prefetchWhenIdle() {
+  const connection = navigator.connection;
+  if (connection?.saveData || connection?.effectiveType?.includes('2g')) return;
+
+  const idle = window.requestIdleCallback ?? ((callback) => setTimeout(callback, 200));
+  idle(() => {
+    document.querySelectorAll('a[data-oot-prefetch]:not([aria-current="page"])').forEach((link) => {
+      fetchSections(link.href).catch(() => {});
     });
-    request.catch(() => sectionHtmlCache.delete(key));
-    sectionHtmlCache.set(key, request);
-  }
-  return sectionHtmlCache.get(key);
+  }, { timeout: 2000 });
 }
 
 async function switchProduct(href, { push, scrollTop = false, pointer = false }) {
@@ -431,6 +453,7 @@ async function switchProduct(href, { push, scrollTop = false, pointer = false })
   if (push) history.pushState({ ootProduct: true }, '', target);
   if (scrollTop) window.scrollTo({ top: 0, behavior: 'instant' });
   focusCurrentTile(pointer);
+  prefetchWhenIdle();
 }
 
 /**
@@ -481,6 +504,7 @@ if (document.querySelector('[data-oot-product-section]')) {
   };
   document.addEventListener('pointerover', prefetch, { passive: true });
   document.addEventListener('focusin', prefetch);
+  prefetchWhenIdle();
 
   window.addEventListener('popstate', (event) => {
     if (event.state?.ootProduct) switchProduct(window.location.href, { push: false, pointer: true });
