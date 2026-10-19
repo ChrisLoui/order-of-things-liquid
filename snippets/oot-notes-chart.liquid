@@ -1,0 +1,172 @@
+{% doc %}
+  Figma Scent Notes (14:2701): top, heart and base as staggered bars on a wear
+  timeline. "Bar proportions are fixed; only note names change per composition."
+  Positions are Figma px over the 524px desktop module, as percentages.
+
+  @param {string} top - Top note
+  @param {string} heart - Heart note
+  @param {string} base - Base note
+  @param {string} [disclaimer] - Line under the chart
+
+  @example
+  {% render 'oot-notes-chart', top: 'Bergamot', heart: 'Green Herbs', base: 'Vetiver' %}
+{% enddoc %}
+
+<div class="oot-notes-chart">
+  <div class="oot-notes-chart__heading oot-caption">
+    <p>{{ 'oot.notes.heading' | t }}</p>
+    <p>{{ 'oot.notes.subheading' | t }}</p>
+  </div>
+
+  <dl class="oot-notes-chart__rows">
+    <div class="oot-notes-chart__row oot-notes-chart__row--top">
+      <dt class="oot-caption">{{ 'oot.product.top' | t }}</dt>
+      <dd class="oot-label">{{ top | escape }}</dd>
+    </div>
+    <div class="oot-notes-chart__row oot-notes-chart__row--heart">
+      <dt class="oot-caption">{{ 'oot.product.heart' | t }}</dt>
+      <dd class="oot-label">{{ heart | escape }}</dd>
+    </div>
+    <div class="oot-notes-chart__row oot-notes-chart__row--base">
+      <dt class="oot-caption">{{ 'oot.product.base' | t }}</dt>
+      <dd class="oot-label">{{ base | escape }}</dd>
+    </div>
+  </dl>
+
+  <div class="oot-notes-chart__axis oot-caption" aria-hidden="true">
+    <span class="oot-notes-chart__tick oot-notes-chart__tick--start">
+      <span class="oot-notes-chart__mobile">{{ 'oot.notes.start' | t }}</span>
+      <span class="oot-notes-chart__desktop">{{ 'oot.notes.spray' | t }}</span>
+    </span>
+    <span class="oot-notes-chart__tick oot-notes-chart__tick--1h">{{ 'oot.notes.hour_1' | t }}</span>
+    <span class="oot-notes-chart__tick oot-notes-chart__tick--4h">{{ 'oot.notes.hour_4' | t }}</span>
+    <span class="oot-notes-chart__tick oot-notes-chart__tick--end">{{ 'oot.notes.hour_8' | t }}</span>
+  </div>
+
+  {%- if disclaimer != blank -%}
+    <p class="oot-body-m oot-notes-chart__disclaimer">{{ disclaimer | escape }}</p>
+  {%- endif -%}
+</div>
+
+{% stylesheet %}
+  .oot-notes-chart {
+    /* Grid lines at Spray, 1 h, 4 h and 8 h + (Figma px / 524). */
+    --oot-notes-spray: 30.53%;
+    --oot-notes-1h: 47.14%;
+    --oot-notes-4h: 70.8%;
+    --oot-notes-line: linear-gradient(var(--oot-color-hairline), var(--oot-color-hairline));
+    padding-block: 16px;
+    border-block: 1px solid var(--oot-color-ink);
+  }
+
+  .oot-notes-chart__heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block-end: 10px;
+    opacity: 0.6;
+  }
+
+  .oot-notes-chart__rows {
+    position: relative;
+    margin: 0;
+    border-block-start: 1px solid var(--oot-color-hairline);
+    background-image: var(--oot-notes-line), var(--oot-notes-line), var(--oot-notes-line), var(--oot-notes-line);
+    background-size: 1px 100%;
+    background-repeat: no-repeat;
+    background-position:
+      calc(var(--oot-notes-spray) - 1px) 0,
+      calc(var(--oot-notes-1h) - 1px) 0,
+      calc(var(--oot-notes-4h) - 1px) 0,
+      100% 0;
+  }
+
+  .oot-notes-chart__row {
+    position: relative;
+    height: 44px;
+    padding-block-start: 5px;
+    border-block-end: 1px solid var(--oot-color-hairline);
+  }
+
+  .oot-notes-chart__row dt {
+    opacity: 0.6;
+  }
+
+  .oot-notes-chart__row dd {
+    margin: 0;
+  }
+
+  /* The bar for each stage: fixed proportions, only the note names change. */
+  .oot-notes-chart__row::after {
+    content: '';
+    position: absolute;
+    inset-block-start: 18px;
+    height: 8px;
+    background: var(--oot-color-ink);
+  }
+
+  .oot-notes-chart__row--top::after {
+    left: 30.53%;
+    width: 16.6%;
+    opacity: 0.55;
+  }
+
+  .oot-notes-chart__row--heart::after {
+    left: 38.93%;
+    width: 31.87%;
+    opacity: 0.78;
+  }
+
+  .oot-notes-chart__row--base::after {
+    left: 55.34%;
+    width: 44.66%;
+  }
+
+  .oot-notes-chart__axis {
+    position: relative;
+    height: 26px;
+    opacity: 0.6;
+  }
+
+  .oot-notes-chart__tick {
+    position: absolute;
+    top: 8px;
+  }
+
+  .oot-notes-chart__tick--start {
+    left: var(--oot-notes-spray);
+  }
+
+  .oot-notes-chart__tick--1h {
+    left: var(--oot-notes-1h);
+    transform: translateX(-50%);
+  }
+
+  .oot-notes-chart__tick--4h {
+    left: var(--oot-notes-4h);
+    transform: translateX(-50%);
+  }
+
+  .oot-notes-chart__tick--end {
+    right: 0;
+  }
+
+  .oot-notes-chart__desktop {
+    display: none;
+  }
+
+  .oot-notes-chart__disclaimer {
+    margin-block-start: 8px;
+    opacity: 0.75;
+  }
+
+  @media (min-width: 1024px) {
+    .oot-notes-chart__mobile {
+      display: none;
+    }
+
+    .oot-notes-chart__desktop {
+      display: inline;
+    }
+  }
+{% endstylesheet %}

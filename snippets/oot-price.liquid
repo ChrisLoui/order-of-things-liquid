@@ -9,11 +9,10 @@
   {% render 'oot-price', price: product.price, note: section.settings.price_note %}
 {% enddoc %}
 
+{%- comment -%} data-oot-price / data-oot-price-note let <oot-purchase> show the selected option's price. {%- endcomment -%}
 <p class="oot-price-line">
-  <span class="oot-price">{{ price | money_without_trailing_zeros }}</span>
-  {%- if note != blank %}
-    <span class="oot-body-m oot-price-line__note">{{ note | escape }}</span>
-  {%- endif %}
+  <span class="oot-price" data-oot-price>{{ price | money_without_trailing_zeros }}</span>
+  <span class="oot-body-m oot-price-line__note" data-oot-price-note>{{ note | escape }}</span>
 </p>
 
 {% stylesheet %}
@@ -25,5 +24,9 @@
 
   .oot-price-line__note {
     opacity: 0.6;
+  }
+
+  .oot-price-line__note:empty {
+    display: none;
   }
 {% endstylesheet %}

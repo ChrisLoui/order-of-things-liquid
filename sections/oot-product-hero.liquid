@@ -31,10 +31,14 @@
     assign size = variant.title
   endif
 
+  assign status = composition[1]
+
   # Photo i shows product media i when the product has it (see oot-gallery-image).
-  assign photo_count = section.blocks.size
+  assign photos = section.blocks | where: 'type', 'photo'
+  assign photo_count = photos.size
   assign photo_count_padded = photo_count | prepend: '0' | slice: -2, 2
   assign desktop_tiles = '01,03,05,06' | split: ','
+  assign form_id = 'oot-product-form-' | append: section.id
 -%}
 
 <div
@@ -47,7 +51,7 @@
 
   {%- comment -%} Desktop: one 2-column grid; photos 1–4 fill tiles 01, 03, 05, 06 around the carton (02) and the notes panel (04). {%- endcomment -%}
   <div class="oot-hero__desktop">
-    {%- for block in section.blocks limit: 4 -%}
+    {%- for block in photos limit: 4 -%}
       {%- liquid
         # The first photo is the full-width hero tile, also mobile slide 1.
         assign full = forloop.first
@@ -128,7 +132,7 @@
           aria-label="{{ 'oot.gallery.label' | t }}"
           tabindex="0"
         >
-          {%- for block in section.blocks -%}
+          {%- for block in photos -%}
             <div
               class="oot-carousel__slide"
               role="group"
@@ -169,10 +173,10 @@
       <div class="oot-carousel__bar">
         <p class="oot-carousel__status" aria-live="polite">
           <span class="oot-label-mobile"><span data-counter>01</span> / {{ photo_count_padded }}</span>
-          <span class="oot-label" data-caption>{{ section.blocks.first.settings.caption | escape }}</span>
+          <span class="oot-label" data-caption>{{ photos.first.settings.caption | escape }}</span>
         </p>
         <div class="oot-carousel__dots" aria-hidden="true">
-          {%- for block in section.blocks -%}
+          {%- for block in photos -%}
             <span class="oot-carousel__dot{% if forloop.first %} is-active{% endif %}"></span>
           {%- endfor -%}
         </div>
@@ -180,7 +184,7 @@
     </oot-carousel>
   {%- endif -%}
 
-  <div class="oot-hero__panel">
+  <oot-purchase class="oot-hero__panel" data-status="{{ status }}" data-added="{{ 'oot.purchase.added' | t | escape }}" data-error="{{ 'oot.purchase.error' | t | escape }}">
     <div class="oot-hero__plate">
       <nav class="oot-hero__breadcrumb oot-caption" aria-label="{{ 'oot.product.breadcrumb' | t }}">
         {%- if section.settings.breadcrumb_root != blank -%}
@@ -298,8 +302,137 @@
           </ul>
         </div>
       {%- endif -%}
+
+      <div class="oot-hero__purchase">
+        {% render 'oot-purchase-form',
+          product: product,
+          variant: variant,
+          status: status,
+          form_id: form_id,
+          price_note: section.settings.price_note,
+          show_subscribe: section.settings.show_subscribe,
+          subscribe_discount: section.settings.subscribe_discount,
+          note: section.settings.purchase_note
+        %}
+      </div>
+
+      {%- if has_notes and section.settings.show_notes_chart -%}
+        <div class="oot-hero__notes-chart">
+          {% render 'oot-notes-chart',
+            top: composition[2],
+            heart: composition[3],
+            base: composition[4],
+            disclaimer: section.settings.notes_disclaimer
+          %}
+        </div>
+      {%- endif -%}
+
+      {%- assign assurances = section.blocks | where: 'type', 'assurance' -%}
+      {%- if assurances.size > 0 -%}
+        {%- comment -%} Figma Assurances (14:3807). {%- endcomment -%}
+        <ul class="oot-detail-list oot-detail-list--tiles oot-hero__assurances">
+          {%- for block in assurances -%}
+            {% render 'oot-detail-item',
+              icon: block.settings.icon,
+              title: block.settings.title,
+              attributes: block.shopify_attributes
+            %}
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
     </div>
-  </div>
+
+    {%- comment -%}
+      Details accordion (Figma 14:3381), below the plate on the brand grid. A shared
+      <details name> keeps one row open at a time natively; older browsers allow several.
+    {%- endcomment -%}
+    <div class="oot-details">
+      {%- assign row = 0 -%}
+      {%- for block in section.blocks -%}
+        {%- unless block.type == 'detail' or block.type == 'ingredients' -%}
+          {%- continue -%}
+        {%- endunless -%}
+        {%- assign row = row | plus: 1 -%}
+        <details class="oot-details__row" name="oot-details-{{ section.id }}" {{ block.shopify_attributes }}>
+          <summary class="oot-details__summary">
+            <span class="oot-caption oot-details__index">{{ row | prepend: '0' | slice: -2, 2 }}</span>
+            <h3 class="oot-button-l oot-details__title">{{ block.settings.title | escape }}</h3>
+            <span class="oot-button-l oot-details__toggle" aria-hidden="true"></span>
+          </summary>
+
+          <div class="oot-details__body">
+            {%- case block.type -%}
+              {%- when 'detail' -%}
+                {%- liquid
+                  assign intro = block.settings.intro
+                  if block.settings.use_composition_intro and product.metafields.custom.composition_intro != blank
+                    assign intro = product.metafields.custom.composition_intro.value | escape | newline_to_br | prepend: '<p>' | append: '</p>'
+                  endif
+                -%}
+                {%- if intro != blank -%}
+                  <div class="oot-body-m oot-details__intro">{{ intro }}</div>
+                {%- endif -%}
+                <ul class="oot-detail-list oot-detail-list--{{ block.settings.layout }}{% if block.settings.layout == 'tiles' %} oot-detail-list--rule{% endif %}">
+                  {%- for i in (1..3) -%}
+                    {%- liquid
+                      # Settings item_1_title … item_3_title; lookups by key can't take filters.
+                      assign title_key = 'item_' | append: i | append: '_title'
+                      assign icon_key = 'item_' | append: i | append: '_icon'
+                      assign text_key = 'item_' | append: i | append: '_text'
+                    -%}
+                    {%- if block.settings[title_key] != blank -%}
+                      {% render 'oot-detail-item',
+                        icon: block.settings[icon_key],
+                        title: block.settings[title_key],
+                        text: block.settings[text_key]
+                      %}
+                    {%- endif -%}
+                  {%- endfor -%}
+                </ul>
+
+              {%- when 'ingredients' -%}
+                <div class="oot-details__ingredients">
+                  {%- for list in (1..2) -%}
+                    {%- liquid
+                      if list == 1
+                        assign list_label = block.settings.formula_label
+                        assign list_items = block.settings.formula
+                      else
+                        assign list_label = block.settings.allergens_label
+                        assign list_items = block.settings.allergens
+                      endif
+                      assign list_items = list_items | newline_to_br | split: '<br />'
+                    -%}
+                    {%- if list_items.size > 0 -%}
+                    <div>
+                      <p class="oot-caption oot-details__list-label">{{ list_label | escape }}</p>
+                      <ul class="oot-details__chips">
+                        {%- for item in list_items -%}
+                          {%- assign item = item | strip -%}
+                          {%- if item != blank -%}
+                            <li class="oot-caption">{{ item | escape }}</li>
+                          {%- endif -%}
+                        {%- endfor -%}
+                      </ul>
+                    </div>
+                    {%- endif -%}
+                  {%- endfor -%}
+                  {%- if block.settings.note_title != blank -%}
+                    <ul class="oot-detail-list oot-detail-list--rows">
+                      {% render 'oot-detail-item',
+                        icon: block.settings.note_icon,
+                        title: block.settings.note_title,
+                        text: block.settings.note_text
+                      %}
+                    </ul>
+                  {%- endif -%}
+                </div>
+            {%- endcase -%}
+          </div>
+        </details>
+      {%- endfor -%}
+    </div>
+  </oot-purchase>
 </div>
 
 {% stylesheet %}
@@ -481,6 +614,7 @@
 
   .oot-hero__panel {
     position: relative;
+    display: block;
     min-width: 0;
     padding: 28px 20px 48px;
   }
@@ -596,6 +730,107 @@
     display: none;
   }
 
+  /* Purchase, notes and assurances close the plate */
+
+  .oot-hero__purchase {
+    margin-block-start: 20px;
+  }
+
+  .oot-hero__notes-chart,
+  .oot-hero__assurances {
+    margin-block-start: 16px;
+  }
+
+  /* Details accordion (Figma Accordion Row 14:2815): "+" becomes "–" and the body
+     eases open over 200ms where height can animate to auto. */
+
+  .oot-details {
+    margin-block-start: 16px;
+  }
+
+  .oot-details__row {
+    border-block-end: 1px solid var(--oot-color-ink);
+  }
+
+  .oot-details__row::details-content {
+    block-size: 0;
+    overflow: hidden;
+    transition: block-size 200ms ease-out, content-visibility 200ms allow-discrete;
+  }
+
+  .oot-details__row[open]::details-content {
+    block-size: auto;
+  }
+
+  .oot-details__summary {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding-block: 14px;
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .oot-details__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .oot-details__index {
+    flex-shrink: 0;
+    width: 16px;
+    opacity: 0.45;
+  }
+
+  .oot-details__title {
+    flex: 1;
+    margin: 0;
+  }
+
+  .oot-details__toggle::before {
+    content: '+';
+  }
+
+  .oot-details__row[open] .oot-details__toggle::before {
+    content: '–';
+  }
+
+  /* Indented to line up with the title, not the number. */
+  .oot-details__body {
+    padding: 0 0 24px 36px;
+  }
+
+  .oot-details__intro {
+    margin-block-end: 16px;
+  }
+
+  .oot-details__ingredients {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .oot-details__list-label {
+    margin-block-end: 8px;
+    opacity: 0.6;
+  }
+
+  .oot-details__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .oot-details__chips li {
+    padding: 4px 8px;
+    border: 1px solid var(--oot-color-ink);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .oot-details__row::details-content {
+      transition: none;
+    }
+  }
+
   @media (min-width: 1024px) {
     .oot-hero {
       display: grid;
@@ -648,16 +883,36 @@
     .oot-scent__mobile-only {
       display: none;
     }
+
+    .oot-hero__purchase {
+      margin-block-start: 16px;
+    }
+
+    .oot-hero__notes-chart,
+    .oot-hero__assurances {
+      margin-block-start: 24px;
+    }
+
+    .oot-details {
+      margin-block-start: 0;
+    }
   }
 {% endstylesheet %}
 
+{%- comment -%}
+  Section blocks, not @theme blocks: a section can't mix the two, the photos are
+  section blocks, and the accordion has to live in the hero's right column. Rows hold
+  a fixed three items, matching every row in Figma.
+{%- endcomment -%}
 {% schema %}
 {
   "name": "OoT product hero",
   "tag": "section",
   "class": "oot-hero-section",
   "enabled_on": {
-    "templates": ["product"]
+    "templates": [
+      "product"
+    ]
   },
   "settings": [
     {
@@ -682,6 +937,48 @@
       "id": "collection",
       "label": "Compositions in the scent selector",
       "info": "Products need a composition-N tag. Leave empty to use every product."
+    },
+    {
+      "type": "header",
+      "content": "Purchase"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_subscribe",
+      "label": "Show Subscribe & save",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "subscribe_discount",
+      "label": "Subscribe & save discount",
+      "info": "Shown in the badge. Without a subscription app, also used for the subscription price.",
+      "min": 5,
+      "max": 50,
+      "step": 5,
+      "unit": "%",
+      "default": 10,
+      "visible_if": "{{ section.settings.show_subscribe }}"
+    },
+    {
+      "type": "text",
+      "id": "purchase_note",
+      "label": "Text under the button",
+      "default": "Presented in its butter carton. Each order is wrapped by hand."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_notes_chart",
+      "label": "Show the scent notes chart",
+      "info": "Only shows for products with top:, heart: and base: tags.",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "notes_disclaimer",
+      "label": "Text under the notes chart",
+      "default": "Timings are a guide. Skin, season and how much you wear change everything.",
+      "visible_if": "{{ section.settings.show_notes_chart }}"
     },
     {
       "type": "header",
@@ -716,6 +1013,7 @@
     {
       "type": "photo",
       "name": "Photo",
+      "limit": 8,
       "settings": [
         {
           "type": "image_picker",
@@ -733,24 +1031,524 @@
           "id": "caption_tone",
           "label": "Caption color on desktop",
           "options": [
-            { "value": "ink", "label": "Ink" },
-            { "value": "bone", "label": "Bone" }
+            {
+              "value": "ink",
+              "label": "Ink"
+            },
+            {
+              "value": "bone",
+              "label": "Bone"
+            }
           ],
           "default": "ink"
         }
       ]
+    },
+    {
+      "type": "assurance",
+      "name": "Assurance",
+      "limit": 3,
+      "settings": [
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Icon",
+          "options": [
+            {
+              "value": "truck",
+              "label": "Truck"
+            },
+            {
+              "value": "return",
+              "label": "Return"
+            },
+            {
+              "value": "origin",
+              "label": "Origin pin"
+            },
+            {
+              "value": "spray",
+              "label": "Spray"
+            },
+            {
+              "value": "neck",
+              "label": "Neck"
+            },
+            {
+              "value": "wrist",
+              "label": "Wrist"
+            },
+            {
+              "value": "no-rub",
+              "label": "Don't rub"
+            },
+            {
+              "value": "drop",
+              "label": "Drop"
+            },
+            {
+              "value": "ribbon",
+              "label": "Ribbon"
+            },
+            {
+              "value": "flask",
+              "label": "Flask"
+            },
+            {
+              "value": "carton",
+              "label": "Carton"
+            },
+            {
+              "value": "gift",
+              "label": "Gift"
+            },
+            {
+              "value": "clock",
+              "label": "Clock"
+            }
+          ],
+          "default": "truck"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Title",
+          "default": "Shipping included"
+        }
+      ]
+    },
+    {
+      "type": "detail",
+      "name": "Details row",
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Title",
+          "default": "How to wear"
+        },
+        {
+          "type": "richtext",
+          "id": "intro",
+          "label": "Intro"
+        },
+        {
+          "type": "checkbox",
+          "id": "use_composition_intro",
+          "label": "Use the product's composition intro",
+          "info": "Shows the product metafield custom.composition_intro when it has one, otherwise the intro above.",
+          "default": false
+        },
+        {
+          "type": "select",
+          "id": "layout",
+          "label": "Layout",
+          "options": [
+            {
+              "value": "tiles",
+              "label": "Three across"
+            },
+            {
+              "value": "rows",
+              "label": "Stacked rows"
+            }
+          ],
+          "default": "tiles"
+        },
+        {
+          "type": "header",
+          "content": "Item 1"
+        },
+        {
+          "type": "select",
+          "id": "item_1_icon",
+          "label": "Icon",
+          "options": [
+            {
+              "value": "truck",
+              "label": "Truck"
+            },
+            {
+              "value": "return",
+              "label": "Return"
+            },
+            {
+              "value": "origin",
+              "label": "Origin pin"
+            },
+            {
+              "value": "spray",
+              "label": "Spray"
+            },
+            {
+              "value": "neck",
+              "label": "Neck"
+            },
+            {
+              "value": "wrist",
+              "label": "Wrist"
+            },
+            {
+              "value": "no-rub",
+              "label": "Don't rub"
+            },
+            {
+              "value": "drop",
+              "label": "Drop"
+            },
+            {
+              "value": "ribbon",
+              "label": "Ribbon"
+            },
+            {
+              "value": "flask",
+              "label": "Flask"
+            },
+            {
+              "value": "carton",
+              "label": "Carton"
+            },
+            {
+              "value": "gift",
+              "label": "Gift"
+            },
+            {
+              "value": "clock",
+              "label": "Clock"
+            }
+          ],
+          "default": "neck"
+        },
+        {
+          "type": "text",
+          "id": "item_1_title",
+          "label": "Title"
+        },
+        {
+          "type": "text",
+          "id": "item_1_text",
+          "label": "Text"
+        },
+        {
+          "type": "header",
+          "content": "Item 2"
+        },
+        {
+          "type": "select",
+          "id": "item_2_icon",
+          "label": "Icon",
+          "options": [
+            {
+              "value": "truck",
+              "label": "Truck"
+            },
+            {
+              "value": "return",
+              "label": "Return"
+            },
+            {
+              "value": "origin",
+              "label": "Origin pin"
+            },
+            {
+              "value": "spray",
+              "label": "Spray"
+            },
+            {
+              "value": "neck",
+              "label": "Neck"
+            },
+            {
+              "value": "wrist",
+              "label": "Wrist"
+            },
+            {
+              "value": "no-rub",
+              "label": "Don't rub"
+            },
+            {
+              "value": "drop",
+              "label": "Drop"
+            },
+            {
+              "value": "ribbon",
+              "label": "Ribbon"
+            },
+            {
+              "value": "flask",
+              "label": "Flask"
+            },
+            {
+              "value": "carton",
+              "label": "Carton"
+            },
+            {
+              "value": "gift",
+              "label": "Gift"
+            },
+            {
+              "value": "clock",
+              "label": "Clock"
+            }
+          ],
+          "default": "wrist"
+        },
+        {
+          "type": "text",
+          "id": "item_2_title",
+          "label": "Title"
+        },
+        {
+          "type": "text",
+          "id": "item_2_text",
+          "label": "Text"
+        },
+        {
+          "type": "header",
+          "content": "Item 3"
+        },
+        {
+          "type": "select",
+          "id": "item_3_icon",
+          "label": "Icon",
+          "options": [
+            {
+              "value": "truck",
+              "label": "Truck"
+            },
+            {
+              "value": "return",
+              "label": "Return"
+            },
+            {
+              "value": "origin",
+              "label": "Origin pin"
+            },
+            {
+              "value": "spray",
+              "label": "Spray"
+            },
+            {
+              "value": "neck",
+              "label": "Neck"
+            },
+            {
+              "value": "wrist",
+              "label": "Wrist"
+            },
+            {
+              "value": "no-rub",
+              "label": "Don't rub"
+            },
+            {
+              "value": "drop",
+              "label": "Drop"
+            },
+            {
+              "value": "ribbon",
+              "label": "Ribbon"
+            },
+            {
+              "value": "flask",
+              "label": "Flask"
+            },
+            {
+              "value": "carton",
+              "label": "Carton"
+            },
+            {
+              "value": "gift",
+              "label": "Gift"
+            },
+            {
+              "value": "clock",
+              "label": "Clock"
+            }
+          ],
+          "default": "no-rub"
+        },
+        {
+          "type": "text",
+          "id": "item_3_title",
+          "label": "Title"
+        },
+        {
+          "type": "text",
+          "id": "item_3_text",
+          "label": "Text"
+        }
+      ]
+    },
+    {
+      "type": "ingredients",
+      "name": "Ingredients row",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Title",
+          "default": "Ingredients"
+        },
+        {
+          "type": "text",
+          "id": "formula_label",
+          "label": "First list label",
+          "default": "Formula"
+        },
+        {
+          "type": "textarea",
+          "id": "formula",
+          "label": "First list",
+          "info": "One per line."
+        },
+        {
+          "type": "text",
+          "id": "allergens_label",
+          "label": "Second list label",
+          "default": "Declared allergens"
+        },
+        {
+          "type": "textarea",
+          "id": "allergens",
+          "label": "Second list",
+          "info": "One per line."
+        },
+        {
+          "type": "header",
+          "content": "Note"
+        },
+        {
+          "type": "select",
+          "id": "note_icon",
+          "label": "Icon",
+          "options": [
+            {
+              "value": "truck",
+              "label": "Truck"
+            },
+            {
+              "value": "return",
+              "label": "Return"
+            },
+            {
+              "value": "origin",
+              "label": "Origin pin"
+            },
+            {
+              "value": "spray",
+              "label": "Spray"
+            },
+            {
+              "value": "neck",
+              "label": "Neck"
+            },
+            {
+              "value": "wrist",
+              "label": "Wrist"
+            },
+            {
+              "value": "no-rub",
+              "label": "Don't rub"
+            },
+            {
+              "value": "drop",
+              "label": "Drop"
+            },
+            {
+              "value": "ribbon",
+              "label": "Ribbon"
+            },
+            {
+              "value": "flask",
+              "label": "Flask"
+            },
+            {
+              "value": "carton",
+              "label": "Carton"
+            },
+            {
+              "value": "gift",
+              "label": "Gift"
+            },
+            {
+              "value": "clock",
+              "label": "Clock"
+            }
+          ],
+          "default": "flask"
+        },
+        {
+          "type": "text",
+          "id": "note_title",
+          "label": "Title"
+        },
+        {
+          "type": "text",
+          "id": "note_text",
+          "label": "Text"
+        }
+      ]
     }
   ],
-  "max_blocks": 8,
+  "max_blocks": 24,
   "presets": [
     {
       "name": "OoT product hero",
       "blocks": [
-        { "type": "photo", "settings": { "caption": "Studio front" } },
-        { "type": "photo", "settings": { "caption": "In hand" } },
-        { "type": "photo", "settings": { "caption": "On the ledge", "caption_tone": "bone" } },
-        { "type": "photo", "settings": { "caption": "Charcoal block", "caption_tone": "bone" } },
-        { "type": "photo", "settings": { "caption": "At the window" } }
+        {
+          "type": "photo",
+          "settings": {
+            "caption": "Studio front"
+          }
+        },
+        {
+          "type": "photo",
+          "settings": {
+            "caption": "In hand"
+          }
+        },
+        {
+          "type": "photo",
+          "settings": {
+            "caption": "On the ledge",
+            "caption_tone": "bone"
+          }
+        },
+        {
+          "type": "photo",
+          "settings": {
+            "caption": "Charcoal block",
+            "caption_tone": "bone"
+          }
+        },
+        {
+          "type": "photo",
+          "settings": {
+            "caption": "At the window"
+          }
+        },
+        {
+          "type": "assurance",
+          "settings": {
+            "icon": "truck",
+            "title": "Shipping included"
+          }
+        },
+        {
+          "type": "assurance",
+          "settings": {
+            "icon": "return",
+            "title": "30-day returns"
+          }
+        },
+        {
+          "type": "assurance",
+          "settings": {
+            "icon": "origin",
+            "title": "France & Italy"
+          }
+        }
       ]
     }
   ]

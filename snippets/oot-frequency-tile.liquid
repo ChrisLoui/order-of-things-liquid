@@ -1,0 +1,43 @@
+{% doc %}
+  One "Deliver every" tile in Subscribe & save. Carries the strings <oot-purchase>
+  shows while it's selected: the panel heading, price, price note and button label.
+  Styled by oot-purchase-form, its only caller.
+
+  @param {string} label - e.g. "3 months"
+  @param {number} price - Subscription price in cents
+  @param {string} [plan_id] - Selling plan id; without one the tile is UI only
+  @param {string} [price_note] - e.g. "incl. GST"
+  @param {string} button - Button label while selected
+  @param {boolean} [checked] - Preselected (Figma preselects 3 months)
+
+  @example
+  {% render 'oot-frequency-tile', label: '3 months', price: 33210, button: 'Subscribe', checked: true %}
+{% enddoc %}
+
+{%- liquid
+  assign every = 'oot.purchase.every' | t: frequency: label
+  assign note = every
+  if price_note != blank
+    assign note = every | append: ', ' | append: price_note
+  endif
+-%}
+
+<label class="oot-option__tile oot-caption">
+  <input
+    type="radio"
+    name="oot_frequency"
+    value="{{ plan_id | default: label | escape }}"
+    class="oot-visually-hidden"
+    {% if checked %}
+      checked
+    {% endif %}
+    data-heading="{{ 'oot.purchase.subscription_heading' | t: frequency: label | escape }}"
+    data-price="{{ price | money_without_trailing_zeros }}"
+    data-price-note="{{ note | escape }}"
+    data-button="{{ button | escape }}"
+    {% if plan_id != blank %}
+      data-plan-id="{{ plan_id }}"
+    {% endif %}
+  >
+  {{- label | escape -}}
+</label>

@@ -6,23 +6,144 @@
       "blocks": {
         "photo_studio_front": {
           "type": "photo",
-          "settings": { "caption": "Studio front", "caption_tone": "ink" }
+          "settings": {
+            "caption": "Studio front",
+            "caption_tone": "ink"
+          }
         },
         "photo_in_hand": {
           "type": "photo",
-          "settings": { "caption": "In hand", "caption_tone": "ink" }
+          "settings": {
+            "caption": "In hand",
+            "caption_tone": "ink"
+          }
         },
         "photo_on_the_ledge": {
           "type": "photo",
-          "settings": { "caption": "On the ledge", "caption_tone": "bone" }
+          "settings": {
+            "caption": "On the ledge",
+            "caption_tone": "bone"
+          }
         },
         "photo_charcoal_block": {
           "type": "photo",
-          "settings": { "caption": "Charcoal block", "caption_tone": "bone" }
+          "settings": {
+            "caption": "Charcoal block",
+            "caption_tone": "bone"
+          }
         },
         "photo_at_the_window": {
           "type": "photo",
-          "settings": { "caption": "At the window", "caption_tone": "ink" }
+          "settings": {
+            "caption": "At the window",
+            "caption_tone": "ink"
+          }
+        },
+        "assurance_shipping": {
+          "type": "assurance",
+          "settings": {
+            "icon": "truck",
+            "title": "Shipping included"
+          }
+        },
+        "assurance_returns": {
+          "type": "assurance",
+          "settings": {
+            "icon": "return",
+            "title": "30-day returns"
+          }
+        },
+        "assurance_origin": {
+          "type": "assurance",
+          "settings": {
+            "icon": "origin",
+            "title": "France & Italy"
+          }
+        },
+        "detail_how_to_wear": {
+          "type": "detail",
+          "settings": {
+            "title": "How to wear",
+            "intro": "<p>After bathing, while skin is still warm.</p>",
+            "use_composition_intro": false,
+            "layout": "tiles",
+            "item_1_icon": "neck",
+            "item_1_title": "2× · Neck",
+            "item_1_text": "At the base, where it warms",
+            "item_2_icon": "wrist",
+            "item_2_title": "1× · Wrist",
+            "item_2_text": "Inner wrist, one spray",
+            "item_3_icon": "no-rub",
+            "item_3_title": "Don't rub",
+            "item_3_text": "Let it settle on its own"
+          }
+        },
+        "detail_composition": {
+          "type": "detail",
+          "settings": {
+            "title": "The composition",
+            "intro": "",
+            "use_composition_intro": true,
+            "layout": "tiles",
+            "item_1_icon": "origin",
+            "item_1_title": "France & Italy",
+            "item_1_text": "Blended with a fragrance house",
+            "item_2_icon": "drop",
+            "item_2_title": "Eau de Parfum",
+            "item_2_text": "One concentration",
+            "item_3_icon": "ribbon",
+            "item_3_title": "Fine fragrance",
+            "item_3_text": "Written complete, then adapted"
+          }
+        },
+        "ingredients": {
+          "type": "ingredients",
+          "settings": {
+            "title": "Ingredients",
+            "formula_label": "Formula",
+            "formula": "Alcohol denat.\nParfum (fragrance)\nAqua (water)",
+            "allergens_label": "Declared allergens",
+            "allergens": "Limonene\nLinalool\nCitral\nGeraniol",
+            "note_icon": "flask",
+            "note_title": "Placeholder list",
+            "note_text": "Final INCI and allergens to be supplied by the fragrance house"
+          }
+        },
+        "detail_packaging": {
+          "type": "detail",
+          "settings": {
+            "title": "Packaging",
+            "intro": "",
+            "use_composition_intro": false,
+            "layout": "tiles",
+            "item_1_icon": "spray",
+            "item_1_title": "50 ml spray",
+            "item_1_text": "1.7 fl oz, natural spray",
+            "item_2_icon": "carton",
+            "item_2_title": "Butter carton",
+            "item_2_text": "Printed with its scent ID",
+            "item_3_icon": "gift",
+            "item_3_title": "Wrapped by hand",
+            "item_3_text": "Every order"
+          }
+        },
+        "detail_shipping": {
+          "type": "detail",
+          "settings": {
+            "title": "Shipping & returns",
+            "intro": "",
+            "use_composition_intro": false,
+            "layout": "rows",
+            "item_1_icon": "truck",
+            "item_1_title": "Complimentary shipping",
+            "item_1_text": "Every order within Australia",
+            "item_2_icon": "clock",
+            "item_2_title": "Dispatched in 1–2 business days",
+            "item_2_text": "Tracked to your door",
+            "item_3_icon": "return",
+            "item_3_title": "30-day returns",
+            "item_3_text": "On unopened cartons. Terms to be confirmed"
+          }
         }
       },
       "block_order": [
@@ -30,7 +151,15 @@
         "photo_in_hand",
         "photo_on_the_ledge",
         "photo_charcoal_block",
-        "photo_at_the_window"
+        "photo_at_the_window",
+        "assurance_shipping",
+        "assurance_returns",
+        "assurance_origin",
+        "detail_how_to_wear",
+        "detail_composition",
+        "ingredients",
+        "detail_packaging",
+        "detail_shipping"
       ],
       "settings": {
         "breadcrumb_root": "Fragrance",
@@ -38,9 +167,16 @@
         "collection": "",
         "show_carton": true,
         "carton_caption": "Butter carton",
-        "show_notes_panel": true
+        "show_notes_panel": true,
+        "show_subscribe": true,
+        "subscribe_discount": 10,
+        "purchase_note": "Presented in its butter carton. Each order is wrapped by hand.",
+        "show_notes_chart": true,
+        "notes_disclaimer": "Timings are a guide. Skin, season and how much you wear change everything."
       }
     }
   },
-  "order": ["main"]
+  "order": [
+    "main"
+  ]
 }

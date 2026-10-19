@@ -38,6 +38,37 @@
     },
     "carton": {
       "natural_spray": "Natural Spray"
+    },
+    "purchase": {
+      "heading": "Purchase",
+      "one_time_heading": "One-time",
+      "option_label": "Purchase option",
+      "one_time": "One-time purchase",
+      "subscribe": "Subscribe & save",
+      "save": "Save {{ percent }}%",
+      "deliver_every": "Deliver every",
+      "flexible": "Skip, pause or cancel any time",
+      "months": {
+        "one": "{{ count }} month",
+        "other": "{{ count }} months"
+      },
+      "every": "every {{ frequency }}",
+      "subscription_heading": "Subscription · every {{ frequency }}",
+      "add": "Add to cart",
+      "subscribe_button": "Subscribe",
+      "coming_soon": "Coming soon",
+      "sold_out": "Sold out",
+      "added": "Added to cart",
+      "error": "Couldn't add to cart. Please try again."
+    },
+    "notes": {
+      "heading": "Notes",
+      "subheading": "How it wears over a day",
+      "start": "0",
+      "spray": "Spray",
+      "hour_1": "1 h",
+      "hour_4": "4 h",
+      "hour_8": "8 h +"
     }
   },
   "accessibility": {

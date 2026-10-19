@@ -1,0 +1,74 @@
+{% doc %}
+  One detail (Figma Detail Tile 14:2798): an icon with an uppercase title and an
+  optional supporting line. Renders an <li>; the caller owns the list and its layout
+  class (oot-detail-list--tiles: icon over text, three-up; --rows: icon beside text,
+  stacked with hairlines).
+
+  @param {string} [icon] - oot-icon line icon name
+  @param {string} title - Uppercase title
+  @param {string} [text] - Supporting line
+  @param {string} [attributes] - Extra attributes for the <li>, e.g. block.shopify_attributes
+
+  @example
+  <ul class="oot-detail-list oot-detail-list--tiles">
+    {% render 'oot-detail-item', icon: 'truck', title: 'Shipping included' %}
+  </ul>
+{% enddoc %}
+
+<li class="oot-detail-item" {{ attributes }}>
+  {%- if icon != blank -%}
+    {% render 'oot-icon', name: icon, class: 'oot-detail-item__icon' %}
+  {%- endif -%}
+  <div>
+    <p class="oot-label">{{ title | escape }}</p>
+    {%- if text != blank -%}
+      <p class="oot-body-s oot-detail-item__text">{{ text | escape }}</p>
+    {%- endif -%}
+  </div>
+</li>
+
+{% stylesheet %}
+  .oot-detail-list--tiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .oot-detail-list--tiles .oot-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .oot-detail-list--tiles .oot-detail-item__text {
+    margin-block-start: 4px;
+  }
+
+  .oot-detail-list--rule {
+    padding-block-start: 16px;
+    border-block-start: 1px solid var(--oot-color-hairline);
+  }
+
+  .oot-detail-list--rows {
+    border-block-start: 1px solid var(--oot-color-hairline);
+  }
+
+  .oot-detail-list--rows .oot-detail-item {
+    display: flex;
+    gap: 12px;
+    padding-block: 12px;
+    border-block-end: 1px solid var(--oot-color-hairline);
+  }
+
+  .oot-detail-list--rows .oot-detail-item:last-child {
+    border-block-end: 0;
+  }
+
+  .oot-detail-item__icon {
+    flex-shrink: 0;
+  }
+
+  .oot-detail-item__text {
+    opacity: 0.75;
+  }
+{% endstylesheet %}

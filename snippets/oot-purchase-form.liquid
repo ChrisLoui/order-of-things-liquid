@@ -1,0 +1,356 @@
+{% doc %}
+  Purchase options and the add-to-cart button (Figma 14:3792–14:3803; subscribe
+  selected 14:3546), as a real {% form 'product' %}: without JavaScript it posts to
+  /cart/add. <oot-purchase> (assets/oot.js) adds the AJAX submit and keeps the
+  heading, price and button in step with the selected option. Every display string
+  is rendered here into data attributes, so the script never formats money or copy.
+
+  Subscribe & save uses the product's first selling plan group when a subscription
+  app provides one (name="selling_plan", prices from the variant's allocations).
+  Without one it shows 1/2/3-month frequencies at the section's discount as UI only,
+  and the button stays disabled rather than adding a one-time line at full price.
+
+  @param {product} product - The product
+  @param {variant} variant - The variant to add
+  @param {string} status - 'available', 'coming-soon' or 'sold-out' (oot-composition)
+  @param {string} form_id - Stable id, so other controls can submit with form="..."
+  @param {string} [price_note] - e.g. "incl. GST"
+  @param {boolean} [show_subscribe] - Show the Subscribe & save option
+  @param {number} [subscribe_discount] - Percent off for the UI-only subscription
+  @param {string} [note] - Small print under the button
+
+  @example
+  {% render 'oot-purchase-form', product: product, variant: variant, status: 'available', form_id: 'oot-product-form-main' %}
+{% enddoc %}
+
+{%- liquid
+  assign price = variant.price | money_without_trailing_zeros
+  assign discount = subscribe_discount | default: 10
+  assign plan_group = product.selling_plan_groups.first
+
+  case status
+    when 'coming-soon'
+      assign unavailable_label = 'oot.purchase.coming_soon' | t
+    when 'sold-out'
+      assign unavailable_label = 'oot.purchase.sold_out' | t
+  endcase
+  assign available = false
+  if status == 'available' and variant.available
+    assign available = true
+  endif
+
+  assign one_time_heading = 'oot.purchase.one_time_heading' | t
+  assign add_label = 'oot.purchase.add' | t
+  assign subscribe_label = 'oot.purchase.subscribe_button' | t
+-%}
+
+{%- form 'product', product, id: form_id, class: 'oot-purchase-form', data-oot-product-form: '', novalidate: 'novalidate' -%}
+  <input type="hidden" name="id" value="{{ variant.id }}">
+  <input type="hidden" name="selling_plan" value="" disabled data-plan-input>
+
+  <div class="oot-purchase-form__heading oot-caption">
+    <p>{{ 'oot.purchase.heading' | t }}</p>
+    <p data-purchase-heading>{{ one_time_heading }}</p>
+  </div>
+
+  <fieldset class="oot-purchase-form__options">
+    <legend class="oot-visually-hidden">{{ 'oot.purchase.option_label' | t }}</legend>
+
+    <div class="oot-option">
+      <label class="oot-option__row">
+        <input
+          type="radio"
+          name="oot_purchase"
+          value="one-time"
+          class="oot-visually-hidden"
+          checked
+          data-heading="{{ one_time_heading }}"
+          data-price="{{ price }}"
+          data-price-note="{{ price_note | escape }}"
+          data-button="{{ add_label }}"
+        >
+        <span class="oot-option__radio" aria-hidden="true"></span>
+        <span class="oot-option__label oot-label">{{ 'oot.purchase.one_time' | t }}</span>
+        <span class="oot-product-meta">{{ price }}</span>
+      </label>
+    </div>
+
+    {%- if show_subscribe -%}
+      {%- liquid
+        # Lowest subscription price, shown on the option row.
+        if plan_group
+          assign subscribe_price = variant.selling_plan_allocations | where: 'selling_plan_group_id', plan_group.id | map: 'price' | sort | first
+        else
+          assign saving = variant.price | times: discount | divided_by: 100
+          assign subscribe_price = variant.price | minus: saving
+        endif
+      -%}
+      <div class="oot-option oot-option--subscribe">
+        <label class="oot-option__row">
+          <input type="radio" name="oot_purchase" value="subscribe" class="oot-visually-hidden">
+          <span class="oot-option__radio" aria-hidden="true"></span>
+          <span class="oot-option__label oot-label">
+            {{- 'oot.purchase.subscribe' | t -}}
+            <span class="oot-option__badge oot-caption">{{ 'oot.purchase.save' | t: percent: discount }}</span>
+          </span>
+          <span class="oot-product-meta">{{ subscribe_price | money_without_trailing_zeros }}</span>
+        </label>
+
+        <div class="oot-option__more">
+          <div class="oot-option__more-inner">
+            <fieldset class="oot-option__frequency">
+              <legend class="oot-visually-hidden">{{ 'oot.purchase.deliver_every' | t }}</legend>
+              <div class="oot-purchase-form__heading oot-caption">
+                <p aria-hidden="true">{{ 'oot.purchase.deliver_every' | t }}</p>
+                <p>{{ 'oot.purchase.flexible' | t }}</p>
+              </div>
+
+              <div class="oot-option__tiles">
+                {%- if plan_group -%}
+                  {%- for plan in plan_group.selling_plans -%}
+                    {%- liquid
+                      assign label = plan.options.first.value | default: plan.name
+                      assign allocation = variant.selling_plan_allocations | where: 'selling_plan_id', plan.id | first
+                      assign plan_price = allocation.price | default: variant.price
+                    -%}
+                    {% render 'oot-frequency-tile',
+                      label: label,
+                      price: plan_price,
+                      plan_id: plan.id,
+                      price_note: price_note,
+                      button: subscribe_label,
+                      checked: forloop.last
+                    %}
+                  {%- endfor -%}
+                {%- else -%}
+                  {%- for months in (1..3) -%}
+                    {%- # render arguments can't take filters, so translate first. -%}
+                    {%- assign label = 'oot.purchase.months' | t: count: months -%}
+                    {% render 'oot-frequency-tile',
+                      label: label,
+                      price: subscribe_price,
+                      price_note: price_note,
+                      button: subscribe_label,
+                      checked: forloop.last
+                    %}
+                  {%- endfor -%}
+                {%- endif -%}
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </div>
+    {%- endif -%}
+  </fieldset>
+
+  <button
+    type="submit"
+    class="oot-button oot-button-l oot-purchase-form__submit"
+    data-submit
+    {% unless available %}
+      disabled
+    {% endunless %}
+  >
+    <span data-button-label>{{ unavailable_label | default: add_label }}</span>
+    {% render 'oot-icon', name: 'arrow', class: 'oot-button__arrow' %}
+  </button>
+
+  <p class="oot-caption oot-purchase-form__status" role="status" data-status></p>
+
+  {%- if note != blank -%}
+    <p class="oot-caption oot-purchase-form__note">{{ note | escape }}</p>
+  {%- endif -%}
+{%- endform -%}
+
+{% stylesheet %}
+  .oot-purchase-form__heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .oot-purchase-form__heading p:last-child {
+    text-align: end;
+  }
+
+  .oot-purchase-form__options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 8px 0 0;
+    padding: 0;
+    border: 0;
+  }
+
+  /* Purchase Option (Figma 14:2554): 14% ink outline, 60% on hover; selected is a
+     full ink outline with a 3px base rule. */
+  .oot-option {
+    padding: 14px 12px;
+    border: 1px solid rgb(56 51 49 / 0.14);
+    background: var(--oot-color-bone);
+  }
+
+  .oot-option:hover {
+    border-color: rgb(56 51 49 / 0.6);
+  }
+
+  .oot-option:has(> .oot-option__row :checked) {
+    padding-block-end: 12px;
+    border-color: var(--oot-color-ink);
+    border-block-end-width: 3px;
+  }
+
+  .oot-option__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+
+  .oot-option__row:has(:focus-visible),
+  .oot-option__tile:has(:focus-visible) {
+    outline: 2px solid var(--oot-color-ink);
+    outline-offset: 2px;
+  }
+
+  .oot-option__radio {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    border: 1px solid rgb(56 51 49 / 0.35);
+    border-radius: 50%;
+  }
+
+  .oot-option__row:has(:checked) .oot-option__radio {
+    border-color: var(--oot-color-ink);
+    background: radial-gradient(circle, var(--oot-color-ink) 4px, transparent 4.5px);
+  }
+
+  /* Archivo runs wider than Pilat, so mobile gaps are tighter than Figma's to keep
+     label, pill and price on one 390px line (round 1 measurement). */
+  .oot-option__label {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .oot-option__badge {
+    padding: 3px 6px;
+    background: var(--oot-color-butter);
+  }
+
+  .oot-option .oot-product-meta {
+    white-space: nowrap;
+  }
+
+  /* The frequency choice eases open while Subscribe & save is selected. Rows animate
+     from 0fr to 1fr, so nothing is measured; closed content leaves the tab order. */
+  .oot-option__more {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 200ms ease-out;
+  }
+
+  .oot-option__more-inner {
+    min-height: 0;
+    padding-inline-start: 24px;
+    overflow: hidden;
+    visibility: hidden;
+    transition: visibility 200ms;
+  }
+
+  .oot-option--subscribe:has(> .oot-option__row :checked) .oot-option__more {
+    grid-template-rows: 1fr;
+  }
+
+  .oot-option--subscribe:has(> .oot-option__row :checked) .oot-option__more-inner {
+    visibility: visible;
+  }
+
+  .oot-option__frequency {
+    margin: 0;
+    padding: 10px 0 0;
+    border: 0;
+  }
+
+  .oot-option__tiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-block-start: 8px;
+  }
+
+  .oot-option__tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    border: 1px solid rgb(56 51 49 / 0.14);
+    background: var(--oot-color-bone);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .oot-option__tile:hover {
+    border-color: rgb(56 51 49 / 0.6);
+  }
+
+  .oot-option__tile:has(:checked) {
+    border-color: var(--oot-color-ink);
+  }
+
+  .oot-purchase-form__submit {
+    width: 100%;
+    height: 56px;
+    margin-block-start: 20px;
+    padding-inline: 24px;
+  }
+
+  .oot-purchase-form__status {
+    margin-block-start: 12px;
+  }
+
+  .oot-purchase-form__status:empty {
+    display: none;
+  }
+
+  .oot-purchase-form__note {
+    margin-block-start: 12px;
+    opacity: 0.55;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .oot-option__more,
+    .oot-option__more-inner {
+      transition: none;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .oot-option {
+      padding-inline: 16px;
+    }
+
+    .oot-option__row {
+      gap: 12px;
+    }
+
+    .oot-option__label {
+      gap: 10px;
+    }
+
+    .oot-option__badge {
+      padding-inline: 8px;
+    }
+
+    .oot-option__more-inner {
+      padding-inline-start: 28px;
+    }
+
+    .oot-purchase-form__submit {
+      margin-block-start: 16px;
+    }
+  }
+{% endstylesheet %}

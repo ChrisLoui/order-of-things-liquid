@@ -69,6 +69,129 @@ class OotCarousel extends HTMLElement {
 customElements.define('oot-carousel', OotCarousel);
 
 /**
+ * <oot-purchase>: the buy panel around the {% form 'product' %} (snippets/oot-purchase-form).
+ * Keeps the purchase heading, price and button in step with the selected option, using
+ * the strings Liquid rendered onto each radio, and submits through the AJAX Cart API.
+ * The header's cart count refreshes from the same request (Section Rendering API).
+ * Fires "oot:purchase-change" with the current state, for the sticky buy bar.
+ */
+class OotPurchase extends HTMLElement {
+  connectedCallback() {
+    this.form = this.querySelector('form[data-oot-product-form]');
+    if (!this.form) return;
+
+    this.submitButton = this.form.querySelector('[data-submit]');
+    this.buttonLabel = this.form.querySelector('[data-button-label]');
+    this.planInput = this.form.querySelector('[data-plan-input]');
+    this.status = this.form.querySelector('[data-status]');
+    this.pending = false;
+
+    this.listeners = new AbortController();
+    const { signal } = this.listeners;
+    this.form.addEventListener('change', () => this.update(), { signal });
+    this.form.addEventListener('submit', (event) => this.onSubmit(event), { signal });
+    this.update();
+  }
+
+  disconnectedCallback() {
+    this.listeners?.abort();
+  }
+
+  /** The radio whose strings apply: the frequency while subscribing, else the option. */
+  get selection() {
+    const option = this.form.querySelector('[name="oot_purchase"]:checked');
+    if (option?.value === 'subscribe') return this.form.querySelector('[name="oot_frequency"]:checked');
+    return option;
+  }
+
+  update() {
+    const selection = this.selection;
+    if (!selection) return;
+    const { heading, price, priceNote, button, planId } = selection.dataset;
+    const subscribing = selection.name === 'oot_frequency';
+
+    this.setText('[data-purchase-heading]', heading);
+    this.setText('[data-oot-price]', price);
+    this.setText('[data-oot-price-note]', priceNote);
+
+    // A subscription can only be bought through a selling plan (a subscription app).
+    if (this.planInput) {
+      this.planInput.disabled = !(subscribing && planId);
+      this.planInput.value = planId ?? '';
+    }
+
+    // Coming soon and sold out keep their server-rendered label and stay disabled.
+    const available = this.dataset.status === 'available';
+    const canBuy = available && (!subscribing || Boolean(planId));
+    if (available && this.buttonLabel) this.buttonLabel.textContent = button;
+    if (this.submitButton) {
+      this.submitButton.disabled = !canBuy || this.pending;
+      this.submitButton.setAttribute('aria-busy', String(this.pending));
+    }
+
+    this.dispatchEvent(
+      new CustomEvent('oot:purchase-change', {
+        bubbles: true,
+        detail: { label: this.buttonLabel?.textContent, price, canBuy, pending: this.pending },
+      })
+    );
+  }
+
+  setText(selector, text) {
+    const element = this.querySelector(selector);
+    if (element && text !== undefined) element.textContent = text;
+  }
+
+  /** @param {SubmitEvent} event */
+  async onSubmit(event) {
+    event.preventDefault();
+    if (this.pending) return;
+
+    const header = document.querySelector('[data-site-header]')?.closest('.shopify-section');
+    const headerId = header?.id.replace('shopify-section-', '');
+    const body = new FormData(this.form);
+    if (headerId) {
+      body.append('sections', headerId);
+      // Keep the query (?view= during preview) so the sections render for this exact page.
+      body.append('sections_url', window.location.pathname + window.location.search);
+    }
+
+    this.pending = true;
+    this.showStatus('');
+    this.update();
+
+    try {
+      const response = await fetch(`${window.Shopify?.routes?.root ?? '/'}cart/add.js`, {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        body,
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.description || result.message);
+
+      const fresh = headerId && result.sections?.[headerId];
+      const count = fresh && new DOMParser().parseFromString(fresh, 'text/html').getElementById('oot-cart-count');
+      if (count) document.getElementById('oot-cart-count')?.replaceWith(count);
+      this.showStatus(this.dataset.added, { visible: false });
+    } catch (error) {
+      this.showStatus(error.message || this.dataset.error, { visible: true });
+    } finally {
+      this.pending = false;
+      this.update();
+    }
+  }
+
+  /** One status region: errors show; success is announced to screen readers only. */
+  showStatus(message, { visible = true } = {}) {
+    if (!this.status) return;
+    this.status.textContent = message ?? '';
+    this.status.classList.toggle('oot-visually-hidden', !visible);
+  }
+}
+
+customElements.define('oot-purchase', OotPurchase);
+
+/**
  * Composition switching without a reload ("like turning the pages of one book").
  * Scent tiles are plain links. On click, every [data-oot-product-section] on the page
  * is re-rendered for the target product through the Section Rendering API

@@ -42,6 +42,8 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Lets height animate to auto (the details accordion) where supported. */
+  interpolate-size: allow-keywords;
 }
 
 body {
@@ -96,6 +98,48 @@ img {
 :focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 2px;
+}
+
+/* Button (Figma 14:2619), shared by the buy panel and the sticky bar: charcoal fill,
+   darker on hover with the arrow nudged 4px right, 40% when disabled. */
+
+.oot-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--oot-color-charcoal);
+  color: var(--oot-color-bone);
+  transition: background-color 150ms ease-out;
+}
+
+.oot-button:hover {
+  background: var(--oot-color-charcoal-hover);
+}
+
+.oot-button:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.oot-button[aria-busy='true'] {
+  cursor: progress;
+}
+
+.oot-button__arrow {
+  flex-shrink: 0;
+  transition: transform 150ms ease-out;
+}
+
+.oot-button:hover .oot-button__arrow {
+  transform: translateX(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oot-button,
+  .oot-button__arrow {
+    transition: none;
+  }
 }
 
 /* Layout helpers */
