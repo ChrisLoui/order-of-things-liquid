@@ -174,9 +174,17 @@
         "show_notes_chart": true,
         "notes_disclaimer": "Timings are a guide. Skin, season and how much you wear change everything."
       }
+    },
+    "sticky_bar": {
+      "type": "oot-sticky-bar",
+      "settings": {
+        "show_carton": true,
+        "note": "Complimentary shipping · Wrapped by hand"
+      }
     }
   },
   "order": [
-    "main"
+    "main",
+    "sticky_bar"
   ]
 }

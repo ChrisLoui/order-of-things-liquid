@@ -1,0 +1,18 @@
+{%- doc -%}
+  Outputs a size with fluid ounces, as printed on the carton: "50 ml" → "50 ml / 1.7 fl oz".
+  Sizes not in ml are output as they are.
+
+  @param {string} size - Variant size, e.g. "50 ml"
+
+  @example
+  {% render 'oot-size-label', size: '50 ml' %}
+{%- enddoc -%}
+
+{%- liquid
+  if size contains 'ml'
+    assign fl_oz = size | split: ' ' | first | times: 1.0 | divided_by: 29.5735 | round: 1
+    echo size | append: ' / ' | append: fl_oz | append: ' fl oz' | escape
+  else
+    echo size | escape
+  endif
+-%}

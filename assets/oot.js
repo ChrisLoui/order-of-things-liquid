@@ -88,7 +88,10 @@ class OotPurchase extends HTMLElement {
 
     this.listeners = new AbortController();
     const { signal } = this.listeners;
-    this.form.addEventListener('change', () => this.update(), { signal });
+    this.form.addEventListener('change', () => {
+      this.showStatus('');
+      this.update();
+    }, { signal });
     this.form.addEventListener('submit', (event) => this.onSubmit(event), { signal });
     this.update();
   }
@@ -129,12 +132,15 @@ class OotPurchase extends HTMLElement {
       this.submitButton.setAttribute('aria-busy', String(this.pending));
     }
 
-    this.dispatchEvent(
-      new CustomEvent('oot:purchase-change', {
-        bubbles: true,
-        detail: { label: this.buttonLabel?.textContent, price, canBuy, pending: this.pending },
-      })
-    );
+    /** Read by the sticky bar when it connects after this element. */
+    this.state = {
+      label: this.buttonLabel?.textContent ?? '',
+      price,
+      canBuy,
+      pending: this.pending,
+      error: this.status && !this.status.classList.contains('oot-visually-hidden') ? this.status.textContent : '',
+    };
+    this.dispatchEvent(new CustomEvent('oot:purchase-change', { bubbles: true, detail: this.state }));
   }
 
   setText(selector, text) {
@@ -192,12 +198,109 @@ class OotPurchase extends HTMLElement {
 customElements.define('oot-purchase', OotPurchase);
 
 /**
+ * <oot-sticky-bar>: shows once the buy panel's button has scrolled under the sticky
+ * header, and hides when it comes back. Its button submits the panel's form (one
+ * add-to-cart path); label, price and state mirror <oot-purchase>. A composition switch
+ * replaces the panel, so the bar re-binds whenever a different panel reports in.
+ */
+class OotStickyBar extends HTMLElement {
+  connectedCallback() {
+    this.button = this.querySelector('[data-submit]');
+    this.label = this.querySelector('[data-label]');
+    this.prices = this.querySelectorAll('[data-price]');
+    this.error = this.querySelector('[data-error]');
+
+    this.listeners = new AbortController();
+    document.addEventListener('oot:purchase-change', (event) => this.onPurchaseChange(event), {
+      signal: this.listeners.signal,
+    });
+    const purchase = document.querySelector('oot-purchase');
+    if (purchase?.state) this.bind(purchase, purchase.state);
+  }
+
+  disconnectedCallback() {
+    this.listeners?.abort();
+    this.stopObserving();
+  }
+
+  /** @param {CustomEvent} event */
+  onPurchaseChange(event) {
+    this.bind(event.target, event.detail);
+  }
+
+  bind(purchase, state) {
+    if (purchase !== this.purchase && purchase.isConnected) {
+      this.purchase = purchase;
+      const form = purchase.querySelector('form[data-oot-product-form]');
+      if (form?.id) this.button?.setAttribute('form', form.id);
+      this.observe(form?.querySelector('[data-submit]'));
+    }
+    this.render(state);
+  }
+
+  render({ label, price, canBuy, pending, error }) {
+    if (this.label) this.label.textContent = label;
+    this.prices.forEach((element) => (element.textContent = price));
+    if (this.error) this.error.textContent = error;
+    if (this.button) {
+      this.button.disabled = !canBuy || pending;
+      this.button.setAttribute('aria-busy', String(pending));
+    }
+  }
+
+  /**
+   * "Scrolled past" means the panel's button has gone up under the sticky header, so
+   * the bar doesn't show on first load while the button is still below the fold. The
+   * header's height changes at 1024px, so it's measured, and the observer is rebuilt
+   * whenever the header resizes (round-1 lesson).
+   */
+  observe(target) {
+    this.stopObserving();
+    if (!target) return;
+    const header = document.querySelector('[data-site-header]');
+    let observedHeight;
+
+    const build = () => {
+      const headerHeight = header?.offsetHeight ?? 0;
+      if (headerHeight === observedHeight) return; // width-only resize
+      observedHeight = headerHeight;
+      this.intersection?.disconnect();
+      this.intersection = new IntersectionObserver(
+        ([entry]) => this.setVisible(!entry.isIntersecting && entry.boundingClientRect.top < headerHeight),
+        { rootMargin: `-${headerHeight}px 0px 0px 0px` }
+      );
+      this.intersection.observe(target);
+    };
+
+    build();
+    this.resize = new ResizeObserver(build);
+    if (header) this.resize.observe(header);
+  }
+
+  stopObserving() {
+    this.intersection?.disconnect();
+    this.resize?.disconnect();
+    this.intersection = this.resize = undefined;
+  }
+
+  setVisible(visible) {
+    this.toggleAttribute('data-visible', visible);
+    this.inert = !visible;
+    this.setAttribute('aria-hidden', String(!visible));
+  }
+}
+
+customElements.define('oot-sticky-bar', OotStickyBar);
+
+/**
  * Composition switching without a reload ("like turning the pages of one book").
  * Scent tiles are plain links. On click, every [data-oot-product-section] on the page
  * is re-rendered for the target product through the Section Rendering API
  * (?sections=id1,id2) and swapped in place, then the URL is pushed. All compositions
  * share this template, so the same section IDs exist on every product page.
- * Any failure falls back to normal navigation.
+ * Any failure falls back to normal navigation. Links marked data-oot-scroll="top"
+ * (switches started outside the hero, like collection cards) land at the top of the
+ * new page, as a normal navigation would; scent tiles keep the scroll position.
  */
 const sectionHtmlCache = new Map();
 let latestSwitch = 0;
@@ -232,7 +335,7 @@ function fetchSections(href) {
   return sectionHtmlCache.get(key);
 }
 
-async function switchProduct(href, { push }) {
+async function switchProduct(href, { push, scrollTop = false }) {
   const switchId = ++latestSwitch;
   const target = withCurrentView(href);
 
@@ -261,6 +364,7 @@ async function switchProduct(href, { push }) {
 
   if (title) document.title = title;
   if (push) history.pushState({ ootProduct: true }, '', target);
+  if (scrollTop) window.scrollTo({ top: 0, behavior: 'instant' });
   document.querySelector('[data-oot-switch][aria-current="page"]')?.focus({ preventScroll: true });
 }
 
@@ -284,7 +388,7 @@ if (document.querySelector('[data-oot-product-section]')) {
     if (!link) return;
     event.preventDefault();
     if (link.getAttribute('aria-current') === 'page') return;
-    switchProduct(link.href, { push: true });
+    switchProduct(link.href, { push: true, scrollTop: link.dataset.ootScroll === 'top' });
   });
 
   // Fetch on intent, so the click usually finds the response already cached.

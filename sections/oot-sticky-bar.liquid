@@ -1,0 +1,223 @@
+{% comment %}
+  Section contract.
+  Sticky buy bar (Figma 14:3239 desktop 1440×80, 14:3370 mobile 390×76). Slides up
+  once the buy panel's button has scrolled under the header, and back down when it
+  returns. It has no add-to-cart logic of its own: its button submits the panel's
+  product form (form="…", bound by <oot-sticky-bar>), and its label, price and state
+  mirror the panel's "oot:purchase-change" events. Without JavaScript it stays hidden.
+  @example
+  <!-- Last section of templates/product.order-of-things.json -->
+{% endcomment %}
+
+{%- liquid
+  capture composition
+    render 'oot-composition', product: product
+  endcapture
+  assign composition = composition | strip | split: '|'
+  assign number = composition[0]
+  assign scent_label = composition[5]
+  assign size = composition[6]
+  assign price = product.selected_or_first_available_variant.price | money_without_trailing_zeros
+-%}
+
+<oot-sticky-bar
+  class="oot-sticky-bar"
+  data-sticky-bar
+  data-oot-product-section
+  data-section-id="{{ section.id }}"
+  aria-hidden="true"
+  inert
+>
+  <div class="oot-container oot-sticky-bar__inner">
+    {%- if section.settings.show_carton -%}
+      {% render 'oot-carton',
+        number: number,
+        label: scent_label,
+        product_type: product.type,
+        size: size,
+        class: 'oot-sticky-bar__carton'
+      %}
+    {%- endif -%}
+
+    <div class="oot-sticky-bar__product">
+      <p class="oot-label oot-sticky-bar__name">
+        {%- if number != blank -%}
+          {%- render 'oot-swatch', number: number -%}
+        {%- endif -%}
+        <span>{{ scent_label | escape }}</span>
+      </p>
+      <p class="oot-body-s oot-sticky-bar__meta">
+        <span class="oot-sticky-bar__error" data-error></span>
+        <span class="oot-sticky-bar__mobile">
+          <span data-price>{{ price }}</span>
+          {%- if size != blank %} · {{ size | escape }}{% endif -%}
+        </span>
+        <span class="oot-sticky-bar__desktop">
+          {{- product.type | escape -}}
+          {%- if size != blank %} · {% render 'oot-size-label', size: size %}{% endif -%}
+        </span>
+      </p>
+    </div>
+
+    {%- if section.settings.note != blank -%}
+      <p class="oot-body-m oot-sticky-bar__note">{{ section.settings.note | escape }}</p>
+    {%- endif -%}
+
+    <button type="submit" class="oot-button oot-button-m oot-sticky-bar__button" data-submit disabled>
+      <span data-label>{{ 'oot.purchase.add' | t }}</span>
+      <span class="oot-sticky-bar__desktop" data-price>{{ price }}</span>
+    </button>
+  </div>
+</oot-sticky-bar>
+
+{% stylesheet %}
+  /* Reserve the bar's height at the end of the page, so the footer can scroll clear of it. */
+  body:has(.oot-sticky-bar) {
+    padding-block-end: 76px;
+  }
+
+  .oot-sticky-bar {
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: 30;
+    display: block;
+    background: var(--oot-color-bone);
+    transform: translateY(100%);
+    transition: transform 300ms ease-out;
+  }
+
+  .oot-sticky-bar[data-visible] {
+    transform: none;
+  }
+
+  .oot-sticky-bar__inner {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    height: 76px;
+  }
+
+  .oot-sticky-bar__carton,
+  .oot-sticky-bar__desktop,
+  .oot-sticky-bar__note {
+    display: none;
+  }
+
+  .oot-sticky-bar__product {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .oot-sticky-bar__name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .oot-sticky-bar__name span,
+  .oot-sticky-bar__meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .oot-sticky-bar__meta {
+    margin-block-start: 4px;
+    opacity: 0.7;
+  }
+
+  /* An error replaces the product line until the next change. */
+  .oot-sticky-bar__error:empty {
+    display: none;
+  }
+
+  .oot-sticky-bar__meta:has(.oot-sticky-bar__error:not(:empty)) > :not(.oot-sticky-bar__error) {
+    display: none;
+  }
+
+  .oot-sticky-bar__button {
+    flex-shrink: 0;
+    justify-content: center;
+    width: 140px;
+    height: 44px;
+    padding-inline: 16px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .oot-sticky-bar {
+      transition: none;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    body:has(.oot-sticky-bar) {
+      padding-block-end: 80px;
+    }
+
+    .oot-sticky-bar__inner {
+      height: 80px;
+    }
+
+    .oot-sticky-bar__carton {
+      display: block;
+      flex-shrink: 0;
+      width: 25px;
+    }
+
+    .oot-sticky-bar__product {
+      margin-inline-start: -8px;
+    }
+
+    .oot-sticky-bar__mobile {
+      display: none;
+    }
+
+    .oot-sticky-bar__desktop {
+      display: inline;
+    }
+
+    .oot-sticky-bar__meta {
+      font-size: 16px;
+    }
+
+    .oot-sticky-bar__note {
+      display: block;
+      opacity: 0.7;
+    }
+
+    .oot-sticky-bar__button {
+      justify-content: space-between;
+      width: 300px;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "OoT sticky buy bar",
+  "tag": "div",
+  "enabled_on": {
+    "templates": ["product"]
+  },
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "show_carton",
+      "label": "Show the carton on desktop",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "note",
+      "label": "Text beside the button on desktop",
+      "default": "Complimentary shipping · Wrapped by hand"
+    }
+  ],
+  "presets": [
+    {
+      "name": "OoT sticky buy bar"
+    }
+  ]
+}
+{% endschema %}

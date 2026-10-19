@@ -14,14 +14,7 @@
   {% render 'oot-carton', number: '1', label: 'No.1 Woody Vetiver', product_type: product.type, size: '50 ml' %}
 {% enddoc %}
 
-{%- liquid
-  # "50 ml" → "50 ml / 1.7 fl oz", as printed on the carton.
-  assign size_line = size
-  if size contains 'ml'
-    assign fl_oz = size | split: ' ' | first | times: 1.0 | divided_by: 29.5735 | round: 1
-    assign size_line = size | append: ' / ' | append: fl_oz | append: ' fl oz'
-  endif
--%}
+{%- capture size_line -%}{%- render 'oot-size-label', size: size -%}{%- endcapture -%}
 
 <div class="oot-carton {{ class }}" aria-hidden="true">
   <div class="oot-carton__box">
@@ -40,7 +33,7 @@
       <div class="oot-carton__lines">
         <p>{{ 'oot.carton.natural_spray' | t }}</p>
         {%- if size_line != blank -%}
-          <p>{{ size_line | escape }}</p>
+          <p>{{ size_line }}</p>
         {%- endif -%}
       </div>
     </div>

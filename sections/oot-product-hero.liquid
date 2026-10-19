@@ -20,16 +20,9 @@
     assign has_notes = true
   endif
 
-  assign scent_label = product.title
-  if number != blank
-    assign scent_label = 'No.' | append: number | append: ' ' | append: product.title
-  endif
-
+  assign scent_label = composition[5]
+  assign size = composition[6]
   assign variant = product.selected_or_first_available_variant
-  assign size = ''
-  if variant.title != 'Default Title'
-    assign size = variant.title
-  endif
 
   assign status = composition[1]
 
