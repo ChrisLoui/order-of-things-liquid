@@ -2,7 +2,7 @@
   Renders an Order of Things icon as inline SVG in currentColor, so it follows the
   surrounding text color. Icons are decorative (aria-hidden); name the control instead.
 
-  @param {string} name - Icon name: wordmark, search, menu
+  @param {string} name - Icon name: wordmark, logo-symbol, search, menu, arrow
   @param {string} [class] - Extra class for sizing
 
   @example
@@ -26,6 +26,22 @@
       <path d="M90.4974 16.15V21.9023C90.4974 33.25 86.1701 37.4727 76.2996 37.4727H62.7905V0.52725H76.2996C86.1701 0.52725 90.4974 4.75 90.4974 16.15ZM76.1951 6.86375H70.2813V31.1363H76.1951C81.5246 31.1363 82.9496 28.025 82.9496 21.85V16.15C82.9496 9.975 81.5246 6.86375 76.1951 6.86375Z"/>
       <path d="M39.9999 23.3272V37.4727H32.5091V0.52725H47.8137C55.9933 0.52725 59.1615 2.58875 59.1615 10.2933V11.1388C59.1615 16.8862 57.575 18.8955 54.1455 19.5795V19.8977C57.5275 20.6388 59.1615 21.6362 59.1615 28.3432V37.4727H51.666V28.3955C51.666 24.0682 50.45 23.3272 46.6025 23.3272H39.9999ZM46.6025 6.80675H39.9999V17.2045H47.182C50.4025 17.2045 51.666 16.3638 51.666 12.4023V11.7705C51.666 7.7045 50.4025 6.80675 46.6025 6.80675Z"/>
       <path d="M14.7773 38H14.1456C4.27502 38 0 33.8818 0 22.4295V15.6227C0 4.22275 4.27502 0 14.1456 0H14.7773C24.5956 0 28.9751 4.22275 28.9751 15.6227V22.4295C28.9751 33.8818 24.5956 38 14.7773 38ZM14.1456 31.5068H14.8296C20.2113 31.5068 21.3751 28.6045 21.3751 22.3773V15.6227C21.3751 9.5 20.2113 6.49325 14.8296 6.49325H14.1456C8.76379 6.49325 7.54778 9.5 7.54778 15.6227V22.3773C7.54778 28.6045 8.76379 31.5068 14.1456 31.5068Z"/>
+    </svg>
+  {%- when 'logo-symbol' -%}
+    {%- # Stacked OT symbol (Figma Logo/Symbol 14:2444), from the R2 block grid. -%}
+    <svg class="{{ class }}" viewBox="0 0 125.517 94.975" fill="currentColor" aria-hidden="true" focusable="false">
+      <rect x="0" y="0" width="125.517" height="11.293"/>
+      <rect x="0" y="16.735" width="41.835" height="11.302"/>
+      <rect x="83.682" y="16.735" width="41.835" height="11.302"/>
+      <rect x="0" y="33.469" width="125.517" height="11.302"/>
+      <rect x="0" y="50.204" width="125.517" height="11.302"/>
+      <rect x="41.835" y="66.938" width="41.847" height="11.302"/>
+      <rect x="41.835" y="83.682" width="41.847" height="11.293"/>
+    </svg>
+  {%- when 'arrow' -%}
+    {%- # Pixel arrow used on buttons and gallery controls. Points right; rotate for "previous". -%}
+    <svg class="{{ class }}" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+      <path d="M1.5 10.5H22.5V13.5H1.5V10.5ZM16.5 7.5H19.5V16.5H16.5V7.5ZM13.5 4.5H16.5V7.5H13.5V4.5ZM13.5 16.5H16.5V19.5H13.5V16.5Z"/>
     </svg>
   {%- when 'search' -%}
     <svg class="{{ class }}" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" aria-hidden="true" focusable="false">

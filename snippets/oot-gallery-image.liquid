@@ -1,0 +1,85 @@
+{% doc %}
+  One gallery photo, filling its positioned host with object-fit: cover. The source is
+  the first that exists: the product's media at this position, the block's image, then
+  the bundled photo (assets/oot-gallery-N.jpg) shipped with the theme.
+
+  The first photo appears in both the desktop grid and the mobile carousel, and CSS
+  hides one. Pass hidden_on so that copy's <picture> serves a blank pixel at the other
+  breakpoint: each device then downloads only the image it shows.
+
+  @param {object} [media] - Product media at this position
+  @param {image} [image] - The block's image_picker value
+  @param {number} position - 1-based position, for the bundled fallback
+  @param {string} alt - Alt text when the image has none (the caption)
+  @param {string} sizes - The sizes attribute for this layout slot
+  @param {boolean} [priority] - The LCP image: eager, high fetch priority
+  @param {string} [hidden_on] - 'mobile' or 'desktop': where CSS hides this copy
+
+  @example
+  {% render 'oot-gallery-image', image: block.settings.image, position: 1, alt: 'Studio front', sizes: '100vw', priority: true, hidden_on: 'desktop' %}
+{% enddoc %}
+
+{%- liquid
+  assign source = image
+  if media
+    assign source = media.preview_image
+  endif
+
+  assign loading = 'lazy'
+  assign fetchpriority = 'auto'
+  if priority
+    assign loading = 'eager'
+    assign fetchpriority = 'high'
+  endif
+-%}
+
+{%- capture img -%}
+  {%- if source -%}
+    {%- assign alt_text = source.alt | default: alt -%}
+    {{
+      source
+      | image_url: width: 1600
+      | image_tag:
+        widths: '400, 600, 800, 1200, 1600',
+        sizes: sizes,
+        loading: loading,
+        fetchpriority: fetchpriority,
+        alt: alt_text,
+        class: 'oot-gallery-image'
+    }}
+  {%- else -%}
+    {%- # Bundled photos are already web-sized (1200–1600px), so one size serves every slot. -%}
+    {%- assign file = 'oot-gallery-' | append: position | append: '.jpg' -%}
+    <img
+      src="{{ file | asset_url }}"
+      alt="{{ alt | escape }}"
+      width="1200"
+      height="1600"
+      loading="{{ loading }}"
+      fetchpriority="{{ fetchpriority }}"
+      class="oot-gallery-image"
+    >
+  {%- endif -%}
+{%- endcapture -%}
+
+{%- if hidden_on != blank -%}
+  <picture>
+    <source
+      media="{% if hidden_on == 'desktop' %}(min-width: 1024px){% else %}(max-width: 1023.98px){% endif %}"
+      srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+    >
+    {{ img }}
+  </picture>
+{%- else -%}
+  {{ img }}
+{%- endif -%}
+
+{% stylesheet %}
+  .oot-gallery-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+{% endstylesheet %}

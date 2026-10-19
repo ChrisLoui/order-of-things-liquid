@@ -1,0 +1,47 @@
+{% doc %}
+  Figma Brand Grid (14:1663): six columns at fixed percentages of the width plus
+  baseline rows ("Fine" = 30px). Ink over bone, bone over imagery. Drawn entirely
+  with backgrounds on one element; position the host relative, the grid fills it.
+
+  @param {string} [tone] - 'ink' (default) or 'bone'
+  @param {string} [class] - Extra class, e.g. to hide it on mobile
+
+  @example
+  {% render 'oot-brand-grid', class: 'oot-hero__grid' %}
+{% enddoc %}
+
+<div class="oot-brand-grid oot-brand-grid--{{ tone | default: 'ink' }} {{ class }}" aria-hidden="true"></div>
+
+{% stylesheet %}
+  .oot-brand-grid {
+    --oot-grid-row: 30px;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    /* Six 1px columns, then baseline rows starting one row down. A percentage
+       position on a 1px image lands within a pixel of the Figma column. */
+    background-image:
+      linear-gradient(var(--oot-grid-col), var(--oot-grid-col)),
+      linear-gradient(var(--oot-grid-col), var(--oot-grid-col)),
+      linear-gradient(var(--oot-grid-col), var(--oot-grid-col)),
+      linear-gradient(var(--oot-grid-col), var(--oot-grid-col)),
+      linear-gradient(var(--oot-grid-col), var(--oot-grid-col)),
+      linear-gradient(var(--oot-grid-col), var(--oot-grid-col)),
+      linear-gradient(to bottom, transparent calc(var(--oot-grid-row) - 1px), var(--oot-grid-line) 0);
+    background-size:
+      1px 100%, 1px 100%, 1px 100%, 1px 100%, 1px 100%, 1px 100%,
+      100% var(--oot-grid-row);
+    background-position: 10.94% 0, 26.56% 0, 42.19% 0, 57.81% 0, 73.44% 0, 89.06% 0, 0 0;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat-y;
+  }
+
+  .oot-brand-grid--ink {
+    --oot-grid-line: rgb(56 51 49 / 0.08);
+    --oot-grid-col: rgb(56 51 49 / 0.14);
+  }
+
+  .oot-brand-grid--bone {
+    --oot-grid-line: rgb(242 237 230 / 0.12);
+    --oot-grid-col: rgb(242 237 230 / 0.24);
+  }
+{% endstylesheet %}

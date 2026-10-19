@@ -1,0 +1,100 @@
+{% doc %}
+  Figma Packaging/Carton (14:2458): the butter carton drawn in HTML, used until
+  photography exists. Every measurement is in Figma px at a 144.828px-wide carton,
+  converted to container units, so it scales with whatever width the host gives it.
+  Decorative: the same facts are in the buy panel.
+
+  @param {string} number - Composition number, for the swatch
+  @param {string} label - Scent label, e.g. "No.1 Woody Vetiver"
+  @param {string} [product_type] - First print line, e.g. "Eau de Parfum"
+  @param {string} [size] - Variant size, e.g. "50 ml"; shown with fl oz
+  @param {string} [class] - Extra class for positioning and width
+
+  @example
+  {% render 'oot-carton', number: '1', label: 'No.1 Woody Vetiver', product_type: product.type, size: '50 ml' %}
+{% enddoc %}
+
+{%- liquid
+  # "50 ml" → "50 ml / 1.7 fl oz", as printed on the carton.
+  assign size_line = size
+  if size contains 'ml'
+    assign fl_oz = size | split: ' ' | first | times: 1.0 | divided_by: 29.5735 | round: 1
+    assign size_line = size | append: ' / ' | append: fl_oz | append: ' fl oz'
+  endif
+-%}
+
+<div class="oot-carton {{ class }}" aria-hidden="true">
+  <div class="oot-carton__box">
+    {% render 'oot-icon', name: 'logo-symbol', class: 'oot-carton__symbol' %}
+    <div class="oot-carton__print">
+      {% render 'oot-icon', name: 'wordmark', class: 'oot-carton__wordmark' %}
+      <div class="oot-carton__lines">
+        {%- if product_type != blank -%}
+          <p>{{ product_type | escape }}</p>
+        {%- endif -%}
+        <p class="oot-carton__scent">
+          {%- render 'oot-swatch', number: number, class: 'oot-carton__swatch' -%}
+          {{- label | escape -}}
+        </p>
+      </div>
+      <div class="oot-carton__lines">
+        <p>{{ 'oot.carton.natural_spray' | t }}</p>
+        {%- if size_line != blank -%}
+          <p>{{ size_line | escape }}</p>
+        {%- endif -%}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% stylesheet %}
+  .oot-carton {
+    container-type: inline-size;
+  }
+
+  .oot-carton__box {
+    /* One Figma px at the carton's rendered width. */
+    --u: calc(100cqw / 144.828);
+    display: flex;
+    flex-direction: column;
+    gap: calc(117.955 * var(--u));
+    aspect-ratio: 144.828 / 280;
+    padding: calc(9.655 * var(--u)) calc(9.655 * var(--u)) 0;
+    background: var(--oot-color-butter);
+    color: var(--oot-color-ink);
+    filter: drop-shadow(calc(11.2 * var(--u)) calc(13.067 * var(--u)) calc(11.2 * var(--u)) rgb(23 20 18 / 0.28));
+  }
+
+  .oot-carton__symbol {
+    width: 100%;
+  }
+
+  .oot-carton__print {
+    display: flex;
+    flex-direction: column;
+    gap: calc(4.023 * var(--u));
+  }
+
+  .oot-carton__wordmark {
+    width: calc(62.759 * var(--u));
+  }
+
+  .oot-carton__lines {
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.805 * var(--u));
+    font-size: calc(6.03 * var(--u));
+    line-height: 1.25;
+  }
+
+  .oot-carton__scent {
+    display: flex;
+    align-items: center;
+    gap: calc(2.414 * var(--u));
+  }
+
+  .oot-carton__swatch.oot-swatch {
+    width: calc(4.828 * var(--u));
+    height: calc(4.828 * var(--u));
+  }
+{% endstylesheet %}

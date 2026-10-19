@@ -1,0 +1,33 @@
+{% doc %}
+  The heavy horizontal bar used across the page (Figma "Bar"). Panel size is 8px on
+  mobile and 12px from 1024px; section size (headings like The collection) is 10px / 12px.
+
+  @param {string} [size] - 'panel' (default) or 'section'
+  @param {string} [tone] - 'ink' (default) or 'butter'
+
+  @example
+  {% render 'oot-rule', size: 'section', tone: 'butter' %}
+{% enddoc %}
+
+<div class="oot-rule oot-rule--{{ size | default: 'panel' }} oot-rule--{{ tone | default: 'ink' }}" aria-hidden="true"></div>
+
+{% stylesheet %}
+  .oot-rule {
+    height: 8px;
+    background: var(--oot-color-ink);
+  }
+
+  .oot-rule--section {
+    height: 10px;
+  }
+
+  .oot-rule--butter {
+    background: var(--oot-color-butter);
+  }
+
+  @media (min-width: 1024px) {
+    .oot-rule {
+      height: 12px;
+    }
+  }
+{% endstylesheet %}

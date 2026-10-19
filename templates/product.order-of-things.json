@@ -3,7 +3,43 @@
   "sections": {
     "main": {
       "type": "oot-product-hero",
-      "settings": {}
+      "blocks": {
+        "photo_studio_front": {
+          "type": "photo",
+          "settings": { "caption": "Studio front", "caption_tone": "ink" }
+        },
+        "photo_in_hand": {
+          "type": "photo",
+          "settings": { "caption": "In hand", "caption_tone": "ink" }
+        },
+        "photo_on_the_ledge": {
+          "type": "photo",
+          "settings": { "caption": "On the ledge", "caption_tone": "bone" }
+        },
+        "photo_charcoal_block": {
+          "type": "photo",
+          "settings": { "caption": "Charcoal block", "caption_tone": "bone" }
+        },
+        "photo_at_the_window": {
+          "type": "photo",
+          "settings": { "caption": "At the window", "caption_tone": "ink" }
+        }
+      },
+      "block_order": [
+        "photo_studio_front",
+        "photo_in_hand",
+        "photo_on_the_ledge",
+        "photo_charcoal_block",
+        "photo_at_the_window"
+      ],
+      "settings": {
+        "breadcrumb_root": "Fragrance",
+        "price_note": "incl. GST",
+        "collection": "",
+        "show_carton": true,
+        "carton_caption": "Butter carton",
+        "show_notes_panel": true
+      }
     }
   },
   "order": ["main"]

@@ -1,0 +1,26 @@
+{% doc %}
+  A composition's scent-ID square in its swatch color (--oot-color-composition-N).
+  10px by default; pass a class to resize or fade it.
+
+  @param {string} number - Composition number
+  @param {string} [class] - Extra class
+
+  @example
+  {% render 'oot-swatch', number: 1 %}
+{% enddoc %}
+
+<span
+  class="oot-swatch {{ class }}"
+  style="--oot-swatch-color: var(--oot-color-composition-{{ number }});"
+  aria-hidden="true"
+></span>
+
+{% stylesheet %}
+  .oot-swatch {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 10px;
+    height: 10px;
+    background: var(--oot-swatch-color);
+  }
+{% endstylesheet %}

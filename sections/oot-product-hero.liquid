@@ -1,21 +1,758 @@
 {% comment %}
   Section contract.
-  Product hero: gallery and buy panel for the current product. Stub for now, so the
-  template has its required main section; the next task builds it out.
+  Product hero (Figma 14:3708 / 14:3744 desktop, 14:3885 / 14:3909 mobile): the photo
+  gallery (an editorial grid on desktop, a carousel on mobile) and the buy panel, from
+  the breadcrumb down to the scent selector. Scent tiles link to each composition;
+  oot.js turns every a[data-oot-switch] into an in-place swap through the Section
+  Rendering API, re-rendering each [data-oot-product-section] on the page.
   @example
   <!-- Main section of templates/product.order-of-things.json -->
 {% endcomment %}
 
-<section class="oot-container">
-  <h1 class="oot-h1">{{ product.title | escape }}</h1>
-</section>
+{%- liquid
+  capture composition
+    render 'oot-composition', product: product
+  endcapture
+  assign composition = composition | strip | split: '|'
+  assign number = composition[0]
+  assign has_notes = false
+  if composition[2] != blank and composition[3] != blank and composition[4] != blank
+    assign has_notes = true
+  endif
+
+  assign scent_label = product.title
+  if number != blank
+    assign scent_label = 'No.' | append: number | append: ' ' | append: product.title
+  endif
+
+  assign variant = product.selected_or_first_available_variant
+  assign size = ''
+  if variant.title != 'Default Title'
+    assign size = variant.title
+  endif
+
+  # Photo i shows product media i when the product has it (see oot-gallery-image).
+  assign photo_count = section.blocks.size
+  assign photo_count_padded = photo_count | prepend: '0' | slice: -2, 2
+  assign desktop_tiles = '01,03,05,06' | split: ','
+-%}
+
+<div
+  class="oot-hero"
+  data-oot-product-section
+  data-section-id="{{ section.id }}"
+  data-page-title="{{ page_title | escape }}{% unless page_title contains shop.name %} &ndash; {{ shop.name | escape }}{% endunless %}"
+>
+  {% render 'oot-brand-grid', class: 'oot-hero__grid' %}
+
+  {%- comment -%} Desktop: one 2-column grid; photos 1–4 fill tiles 01, 03, 05, 06 around the carton (02) and the notes panel (04). {%- endcomment -%}
+  <div class="oot-hero__desktop">
+    {%- for block in section.blocks limit: 4 -%}
+      {%- liquid
+        # The first photo is the full-width hero tile, also mobile slide 1.
+        assign full = forloop.first
+        assign sizes = '(min-width: 1440px) 390px, 27vw'
+        assign hidden_on = ''
+        if full
+          assign sizes = '(min-width: 1440px) 780px, 54vw'
+          assign hidden_on = 'mobile'
+        endif
+      -%}
+      <figure
+        class="oot-hero__tile{% if full %} oot-hero__tile--full{% endif %}"
+        {{ block.shopify_attributes }}
+      >
+        {% render 'oot-gallery-image',
+          media: product.media[forloop.index0],
+          image: block.settings.image,
+          position: forloop.index,
+          alt: block.settings.caption,
+          sizes: sizes,
+          priority: full,
+          hidden_on: hidden_on
+        %}
+        {%- if block.settings.caption != blank -%}
+          <figcaption class="oot-hero__caption oot-label oot-hero__caption--{{ block.settings.caption_tone }}">
+            {{- desktop_tiles[forloop.index0] }}   {{ block.settings.caption | escape -}}
+          </figcaption>
+        {%- endif -%}
+      </figure>
+
+      {%- if forloop.first and section.settings.show_carton -%}
+        <figure class="oot-hero__tile oot-hero__tile--carton">
+          {% render 'oot-carton',
+            number: number,
+            label: scent_label,
+            product_type: product.type,
+            size: size,
+            class: 'oot-hero__carton'
+          %}
+          <figcaption class="oot-hero__caption oot-label oot-hero__caption--ink">
+            {{- '02   ' }}{{ section.settings.carton_caption | escape -}}
+          </figcaption>
+        </figure>
+      {%- endif -%}
+
+      {%- if forloop.index == 2 and has_notes and section.settings.show_notes_panel -%}
+        {%- comment -%} Scent notes as type on charcoal, with bone rules under each line (Figma 14:3721). {%- endcomment -%}
+        <div class="oot-hero__notes oot-label">
+          <p>{{ 'oot.product.scent_notes' | t }}</p>
+          <dl>
+            <div>
+              <dt>{{ 'oot.product.top' | t }}</dt>
+              <dd>{{ composition[2] | escape }}</dd>
+            </div>
+            <div>
+              <dt>{{ 'oot.product.heart' | t }}</dt>
+              <dd>{{ composition[3] | escape }}</dd>
+            </div>
+            <div>
+              <dt>{{ 'oot.product.base' | t }}</dt>
+              <dd>{{ composition[4] | escape }}</dd>
+            </div>
+          </dl>
+        </div>
+      {%- endif -%}
+    {%- endfor -%}
+  </div>
+
+  {%- comment -%} Mobile: every photo as a scroll-snap carousel. {%- endcomment -%}
+  {%- if photo_count > 0 -%}
+    <oot-carousel class="oot-hero__mobile">
+      <div class="oot-carousel__viewport">
+        <div
+          class="oot-carousel__track"
+          data-track
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="{{ 'oot.gallery.label' | t }}"
+          tabindex="0"
+        >
+          {%- for block in section.blocks -%}
+            <div
+              class="oot-carousel__slide"
+              role="group"
+              aria-roledescription="slide"
+              aria-label="{{ 'oot.gallery.slide' | t: index: forloop.index, count: photo_count }}"
+              data-caption="{{ block.settings.caption | escape }}"
+              {{ block.shopify_attributes }}
+            >
+              {%- liquid
+                assign hidden_on = ''
+                if forloop.first
+                  assign hidden_on = 'desktop'
+                endif
+              -%}
+              {% render 'oot-gallery-image',
+                media: product.media[forloop.index0],
+                image: block.settings.image,
+                position: forloop.index,
+                alt: block.settings.caption,
+                sizes: '(min-width: 1024px) 1px, 100vw',
+                priority: forloop.first,
+                hidden_on: hidden_on
+              %}
+            </div>
+          {%- endfor -%}
+        </div>
+
+        <div class="oot-carousel__arrows">
+          <button type="button" class="oot-carousel__arrow" data-prev aria-label="{{ 'oot.gallery.previous' | t }}" disabled>
+            {% render 'oot-icon', name: 'arrow', class: 'oot-carousel__arrow-icon oot-carousel__arrow-icon--prev' %}
+          </button>
+          <button type="button" class="oot-carousel__arrow" data-next aria-label="{{ 'oot.gallery.next' | t }}" {% if photo_count < 2 %}disabled{% endif %}>
+            {% render 'oot-icon', name: 'arrow', class: 'oot-carousel__arrow-icon' %}
+          </button>
+        </div>
+      </div>
+
+      <div class="oot-carousel__bar">
+        <p class="oot-carousel__status" aria-live="polite">
+          <span class="oot-label-mobile"><span data-counter>01</span> / {{ photo_count_padded }}</span>
+          <span class="oot-label" data-caption>{{ section.blocks.first.settings.caption | escape }}</span>
+        </p>
+        <div class="oot-carousel__dots" aria-hidden="true">
+          {%- for block in section.blocks -%}
+            <span class="oot-carousel__dot{% if forloop.first %} is-active{% endif %}"></span>
+          {%- endfor -%}
+        </div>
+      </div>
+    </oot-carousel>
+  {%- endif -%}
+
+  <div class="oot-hero__panel">
+    <div class="oot-hero__plate">
+      <nav class="oot-hero__breadcrumb oot-caption" aria-label="{{ 'oot.product.breadcrumb' | t }}">
+        {%- if section.settings.breadcrumb_root != blank -%}
+          {{- section.settings.breadcrumb_root | escape }}  /  {% endif -%}
+        {{- product.type | escape -}}
+        {%- if number != blank %}  /  No.{{ number }}{% endif -%}
+      </nav>
+
+      <div class="oot-hero__rule-top">{% render 'oot-rule' %}</div>
+
+      <div class="oot-hero__heading">
+        {%- if number != blank -%}
+          <p class="oot-hero__kicker oot-label">
+            {%- render 'oot-swatch', number: number -%}
+            {{- 'oot.product.composition_label' | t: number: number, type: product.type -}}
+          </p>
+        {%- endif -%}
+        <h1 class="oot-h1 oot-hero__title">{{ product.title | escape }}</h1>
+      </div>
+
+      <div class="oot-hero__price-row">
+        {% render 'oot-price', price: variant.price, note: section.settings.price_note %}
+        <p class="oot-label oot-hero__format">
+          {{- product.type | escape -}}
+          {%- if size != blank %} · {{ size | escape }}{% endif -%}
+        </p>
+      </div>
+
+      {%- if product.description != blank -%}
+        <div class="oot-body-m oot-hero__description">{{ product.description }}</div>
+      {%- endif -%}
+
+      <div class="oot-hero__rule-mid">{% render 'oot-rule' %}</div>
+
+      {%- liquid
+        # Scent tiles: the chosen collection, or every product, in composition order.
+        # Collections paginate to 50 products by default, plenty for six compositions.
+        # Each product is parsed once into "NNN~index~status", sorted as text.
+        assign pool = section.settings.collection.products | default: collections.all.products
+        assign entries = ''
+        for item in pool
+          capture item_data
+            render 'oot-composition', product: item
+          endcapture
+          assign item_data = item_data | strip | split: '|'
+          if item_data[0] == blank
+            continue
+          endif
+          assign key = item_data[0] | prepend: '000' | slice: -3, 3
+          assign entries = entries | append: key | append: '~' | append: forloop.index0 | append: '~' | append: item_data[1] | append: ','
+        endfor
+        assign entries = entries | split: ',' | sort
+      -%}
+
+      {%- if entries.size > 0 -%}
+        <div class="oot-scent">
+          <div class="oot-scent__heading oot-caption">
+            <p>{{ 'oot.product.scent' | t }}</p>
+            <p>{{ scent_label | escape }}</p>
+          </div>
+
+          <ul class="oot-scent__tiles">
+            {%- for entry in entries -%}
+              {%- liquid
+                # A new name: assigning to the loop variable wouldn't change what it reads.
+                assign parts = entry | split: '~'
+                assign tile_number = parts[0] | plus: 0
+                assign tile_index = parts[1] | plus: 0
+                assign tile_status = parts[2]
+                assign tile_product = pool[tile_index]
+                assign selected = false
+                if tile_product.id == product.id
+                  assign selected = true
+                endif
+              -%}
+              <li>
+                {%- capture tile_content -%}
+                  {%- if tile_status == 'available' -%}
+                    {%- render 'oot-swatch', number: tile_number -%}
+                  {%- else -%}
+                    {%- render 'oot-swatch', number: tile_number, class: 'oot-scent__swatch--muted' -%}
+                  {%- endif -%}
+                  <span class="oot-scent__name">
+                    No.{{ tile_number }}
+                    {%- if tile_status == 'coming-soon' -%}
+                      <span class="oot-scent__desktop"> · {{ 'oot.product.soon' | t }}</span>
+                      <span class="oot-visually-hidden oot-scent__mobile-only">{{ 'oot.product.coming_soon_a11y' | t }}</span>
+                    {%- else -%}
+                      <span class="oot-scent__desktop"> {{ tile_product.title | split: ' ' | last | escape }}</span>
+                    {%- endif -%}
+                    {%- if tile_status == 'sold-out' -%}
+                      <span class="oot-visually-hidden">{{ 'oot.product.sold_out_a11y' | t }}</span>
+                    {%- endif -%}
+                  </span>
+                {%- endcapture -%}
+
+                {%- if tile_status != 'available' and selected == false -%}
+                  <span class="oot-scent__tile oot-scent__tile--unavailable oot-label" aria-disabled="true">
+                    {{- tile_content -}}
+                  </span>
+                {%- else -%}
+                  <a
+                    href="{{ tile_product.url }}"
+                    class="oot-scent__tile oot-label{% if selected %} oot-scent__tile--selected{% endif %}"
+                    data-oot-switch
+                    {% if selected %}
+                      aria-current="page"
+                    {% endif %}
+                  >
+                    {{- tile_content -}}
+                  </a>
+                {%- endif -%}
+              </li>
+            {%- endfor -%}
+          </ul>
+        </div>
+      {%- endif -%}
+    </div>
+  </div>
+</div>
+
+{% stylesheet %}
+  .oot-hero {
+    position: relative;
+    display: block;
+    max-width: var(--oot-page-width);
+    margin-inline: auto;
+  }
+
+  .oot-hero__grid,
+  .oot-hero__desktop {
+    display: none;
+  }
+
+  /* Desktop gallery */
+
+  .oot-hero__tile {
+    position: relative;
+    margin: 0;
+    aspect-ratio: 1;
+    overflow: hidden;
+  }
+
+  .oot-hero__tile--full {
+    grid-column: 1 / -1;
+  }
+
+  .oot-hero__tile--carton {
+    background: var(--oot-color-bone);
+  }
+
+  .oot-hero__carton {
+    position: absolute;
+    inset-block-start: 13.08%;
+    inset-inline-start: 30.41%;
+    width: 37.14%;
+  }
+
+  .oot-hero__caption {
+    position: absolute;
+    inset-block-end: 24px;
+    inset-inline-start: 24px;
+    white-space: pre;
+  }
+
+  .oot-hero__caption--ink {
+    color: var(--oot-color-ink);
+  }
+
+  .oot-hero__caption--bone {
+    color: var(--oot-color-bone);
+  }
+
+  .oot-hero__notes {
+    position: relative;
+    grid-column: 1 / -1;
+    height: 500px;
+    padding-block-start: 100px;
+    padding-inline-start: 21.28%;
+    overflow: hidden;
+    background-color: var(--oot-color-charcoal);
+    /* Bone rules under each line, at 126, 246, 366 and 486px (Figma 14:3721). */
+    --oot-notes-rule: linear-gradient(rgb(242 237 230 / 0.36), rgb(242 237 230 / 0.36));
+    background-image: var(--oot-notes-rule), var(--oot-notes-rule), var(--oot-notes-rule), var(--oot-notes-rule);
+    background-size: 100% 1px;
+    background-position: 0 126px, 0 246px, 0 366px, 0 486px;
+    background-repeat: no-repeat;
+    color: var(--oot-color-bone);
+  }
+
+  .oot-hero__notes dl {
+    display: flex;
+    flex-direction: column;
+    gap: 102px;
+    margin: 102px 0 0;
+  }
+
+  .oot-hero__notes dl > div {
+    display: grid;
+    grid-template-columns: 228px auto;
+  }
+
+  .oot-hero__notes dd {
+    margin: 0;
+  }
+
+  /* Mobile carousel */
+
+  .oot-hero__mobile {
+    display: block;
+  }
+
+  .oot-carousel__viewport {
+    position: relative;
+  }
+
+  .oot-carousel__track {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .oot-carousel__track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .oot-carousel__slide {
+    position: relative;
+    flex: 0 0 100%;
+    aspect-ratio: 390 / 488;
+    scroll-snap-align: start;
+  }
+
+  .oot-carousel__arrows {
+    position: absolute;
+    inset-block-end: 16px;
+    inset-inline-end: 16px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .oot-carousel__arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--oot-color-ink);
+    background: var(--oot-color-bone);
+  }
+
+  .oot-carousel__arrow:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+
+  .oot-carousel__arrow-icon {
+    width: 19.2px;
+    height: 19.2px;
+  }
+
+  .oot-carousel__arrow-icon--prev {
+    transform: rotate(180deg);
+  }
+
+  .oot-carousel__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-block-end: 1px solid var(--oot-color-ink);
+  }
+
+  .oot-carousel__status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .oot-carousel__dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .oot-carousel__dot {
+    width: 16px;
+    height: 2px;
+    background: var(--oot-color-ink);
+  }
+
+  .oot-carousel__dot.is-active {
+    width: 28px;
+  }
+
+  /* Buy panel */
+
+  .oot-hero__panel {
+    position: relative;
+    min-width: 0;
+    padding: 28px 20px 48px;
+  }
+
+  .oot-hero__breadcrumb {
+    white-space: pre;
+    opacity: 0.55;
+  }
+
+  .oot-hero__rule-top {
+    margin-block: 16px;
+  }
+
+  .oot-hero__heading {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .oot-hero__kicker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .oot-hero__title {
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+
+  .oot-hero__price-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-block-start: 20px;
+    padding-block: 8px;
+    border-block: 1px solid var(--oot-color-ink);
+  }
+
+  .oot-hero__format {
+    opacity: 0.7;
+  }
+
+  .oot-hero__description {
+    margin-block-start: 20px;
+  }
+
+  .oot-hero__description p + p {
+    margin-block-start: 1em;
+  }
+
+  .oot-hero__rule-mid,
+  .oot-scent {
+    margin-block-start: 16px;
+  }
+
+  /* Scent selector (Figma Composition Tiles 14:3782) */
+
+  .oot-scent__heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .oot-scent__heading p:last-child {
+    text-align: end;
+  }
+
+  .oot-scent__tiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-block-start: 8px;
+  }
+
+  .oot-scent__tile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 48px;
+    padding-inline: 14px;
+    border: 1px solid rgb(56 51 49 / 0.14);
+    background: var(--oot-color-bone);
+  }
+
+  a.oot-scent__tile:hover {
+    border-color: rgb(56 51 49 / 0.6);
+  }
+
+  .oot-scent__tile--selected,
+  a.oot-scent__tile--selected:hover {
+    border-color: var(--oot-color-ink);
+    border-block-end-width: 3px;
+  }
+
+  .oot-scent__tile--unavailable {
+    border-color: rgb(56 51 49 / 0.08);
+  }
+
+  .oot-scent__swatch--muted {
+    opacity: 0.4;
+  }
+
+  .oot-scent__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .oot-scent__desktop {
+    display: none;
+  }
+
+  @media (min-width: 1024px) {
+    .oot-hero {
+      display: grid;
+      grid-template-columns: 780fr 660fr;
+      align-items: start;
+    }
+
+    .oot-hero__grid {
+      display: block;
+    }
+
+    .oot-hero__desktop {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .oot-hero__mobile {
+      display: none;
+    }
+
+    .oot-hero__panel {
+      padding: 31px 67px 96px 69px;
+    }
+
+    /* The bone plate covers the brand grid behind the panel (Figma Grid Plate 14:3707). */
+    .oot-hero__plate {
+      margin-inline: -15px -67px;
+      padding: 0 67px 24px 15px;
+      background: var(--oot-color-bone);
+    }
+
+    .oot-hero__rule-top {
+      margin-block-end: 20px;
+    }
+
+    .oot-hero__heading {
+      gap: 16px;
+    }
+
+    .oot-hero__price-row,
+    .oot-hero__description {
+      margin-block-start: 16px;
+    }
+
+    .oot-scent__desktop {
+      display: inline;
+    }
+
+    .oot-scent__mobile-only {
+      display: none;
+    }
+  }
+{% endstylesheet %}
 
 {% schema %}
 {
   "name": "OoT product hero",
-  "tag": "div",
+  "tag": "section",
+  "class": "oot-hero-section",
   "enabled_on": {
     "templates": ["product"]
-  }
+  },
+  "settings": [
+    {
+      "type": "header",
+      "content": "Buy panel"
+    },
+    {
+      "type": "text",
+      "id": "breadcrumb_root",
+      "label": "Breadcrumb start",
+      "default": "Fragrance"
+    },
+    {
+      "type": "text",
+      "id": "price_note",
+      "label": "Text after the price",
+      "info": "For example tax wording. Leave empty to hide.",
+      "default": "incl. GST"
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Compositions in the scent selector",
+      "info": "Products need a composition-N tag. Leave empty to use every product."
+    },
+    {
+      "type": "header",
+      "content": "Desktop gallery"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_carton",
+      "label": "Show the drawn carton (tile 02)",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "carton_caption",
+      "label": "Carton caption",
+      "default": "Butter carton",
+      "visible_if": "{{ section.settings.show_carton }}"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_notes_panel",
+      "label": "Show the scent notes panel (tile 04)",
+      "info": "Only shows for products with top:, heart: and base: tags.",
+      "default": true
+    },
+    {
+      "type": "paragraph",
+      "content": "Photos: product media is used first, in order. Without it, each photo block's image is used, then the bundled photo. On desktop the first four photos fill tiles 01, 03, 05 and 06; on mobile every photo is a carousel slide."
+    }
+  ],
+  "blocks": [
+    {
+      "type": "photo",
+      "name": "Photo",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Image"
+        },
+        {
+          "type": "text",
+          "id": "caption",
+          "label": "Caption",
+          "info": "Also the alt text when the image has none."
+        },
+        {
+          "type": "select",
+          "id": "caption_tone",
+          "label": "Caption color on desktop",
+          "options": [
+            { "value": "ink", "label": "Ink" },
+            { "value": "bone", "label": "Bone" }
+          ],
+          "default": "ink"
+        }
+      ]
+    }
+  ],
+  "max_blocks": 8,
+  "presets": [
+    {
+      "name": "OoT product hero",
+      "blocks": [
+        { "type": "photo", "settings": { "caption": "Studio front" } },
+        { "type": "photo", "settings": { "caption": "In hand" } },
+        { "type": "photo", "settings": { "caption": "On the ledge", "caption_tone": "bone" } },
+        { "type": "photo", "settings": { "caption": "Charcoal block", "caption_tone": "bone" } },
+        { "type": "photo", "settings": { "caption": "At the window" } }
+      ]
+    }
+  ]
 }
 {% endschema %}

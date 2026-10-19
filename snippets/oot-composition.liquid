@@ -1,0 +1,52 @@
+{%- doc -%}
+  Reads the composition conventions out of a product's tags and outputs them as one
+  pipe-delimited string, so every consumer shares one parser (Liquid snippets can't
+  return values, but a capture around a render can):
+
+    number|status|top|heart|base     e.g. 1|available|Bergamot|Green Herbs|Vetiver
+
+  - number: from the `composition-N` tag, blank when the product has none
+  - status: `coming-soon` (tagged, unreleased), `available`, or `sold-out`
+    (released but unavailable). Neither of the last two can be bought.
+  - top / heart / base: from `top:` / `heart:` / `base:` tags, blank when missing
+
+  @param {product} product - The product to read
+
+  @example
+  {%- capture composition -%}{%- render 'oot-composition', product: product -%}{%- endcapture -%}
+  {%- assign composition = composition | strip | split: '|' -%}
+  {{ composition[0] }} {{ composition[1] }}
+{%- enddoc -%}
+
+{%- liquid
+  # A leading comma lets every lookup match a whole tag (",top:") rather than a substring.
+  assign tags = product.tags | join: ',' | prepend: ','
+
+  assign number = ''
+  if tags contains ',composition-'
+    assign number = tags | split: ',composition-' | last | split: ',' | first
+  endif
+
+  if product.tags contains 'coming-soon'
+    assign status = 'coming-soon'
+  elsif product.available
+    assign status = 'available'
+  else
+    assign status = 'sold-out'
+  endif
+
+  assign top = ''
+  assign heart = ''
+  assign base = ''
+  if tags contains ',top:'
+    assign top = tags | split: ',top:' | last | split: ',' | first
+  endif
+  if tags contains ',heart:'
+    assign heart = tags | split: ',heart:' | last | split: ',' | first
+  endif
+  if tags contains ',base:'
+    assign base = tags | split: ',base:' | last | split: ',' | first
+  endif
+
+  echo number | append: '|' | append: status | append: '|' | append: top | append: '|' | append: heart | append: '|' | append: base
+-%}

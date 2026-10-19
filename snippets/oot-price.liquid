@@ -1,0 +1,29 @@
+{% doc %}
+  The buy panel price with its note, e.g. "$369 incl. GST". Whole amounts drop their
+  decimals, as in the design; the store's currency format supplies the symbol.
+
+  @param {number} price - Price in cents
+  @param {string} [note] - Text after the price, e.g. "incl. GST"
+
+  @example
+  {% render 'oot-price', price: product.price, note: section.settings.price_note %}
+{% enddoc %}
+
+<p class="oot-price-line">
+  <span class="oot-price">{{ price | money_without_trailing_zeros }}</span>
+  {%- if note != blank %}
+    <span class="oot-body-m oot-price-line__note">{{ note | escape }}</span>
+  {%- endif %}
+</p>
+
+{% stylesheet %}
+  .oot-price-line {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .oot-price-line__note {
+    opacity: 0.6;
+  }
+{% endstylesheet %}

@@ -17,6 +17,27 @@
       "login": "Login",
       "cart": "Cart ({{ count }})",
       "primary_nav": "Primary"
+    },
+    "product": {
+      "breadcrumb": "Breadcrumb",
+      "composition_label": "Composition No.{{ number }} — {{ type }}",
+      "scent": "Scent",
+      "soon": "Soon",
+      "coming_soon_a11y": ", coming soon",
+      "sold_out_a11y": ", sold out",
+      "scent_notes": "Scent notes",
+      "top": "Top",
+      "heart": "Heart",
+      "base": "Base"
+    },
+    "gallery": {
+      "label": "Product photos",
+      "slide": "{{ index }} of {{ count }}",
+      "previous": "Previous photo",
+      "next": "Next photo"
+    },
+    "carton": {
+      "natural_spray": "Natural Spray"
     }
   },
   "accessibility": {

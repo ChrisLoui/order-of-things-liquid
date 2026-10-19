@@ -8,6 +8,7 @@
     {%- render 'meta-tags' -%}
     {%- render 'oot-fonts' -%}
     {{ 'oot.css' | asset_url | stylesheet_tag }}
+    <script src="{{ 'oot.js' | asset_url }}" defer></script>
 
     {{ content_for_header }}
   </head>
