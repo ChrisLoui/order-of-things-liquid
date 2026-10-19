@@ -1,0 +1,26 @@
+{% doc %}
+  Loads the Order of Things typefaces and exposes them as --oot-font-body and
+  --oot-font-display. Archivo / Archivo Narrow stand in for Pilat / Pilat Narrow
+  (commercial). To switch to Pilat, replace the links below with @font-face rules
+  pointing at 'pilat-*.woff2' | asset_url and change the two family names.
+
+  @example
+  {% render 'oot-fonts' %}
+{% enddoc %}
+
+{% # Google Fonts until the licensed Pilat files are uploaded to assets/. %}
+{% # theme-check-disable RemoteAsset %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Archivo:wght@500&family=Archivo+Narrow:wght@600&display=swap"
+>
+{% # theme-check-enable RemoteAsset %}
+
+<style>
+  :root {
+    --oot-font-body: 'Archivo', sans-serif;
+    --oot-font-display: 'Archivo Narrow', sans-serif;
+  }
+</style>

@@ -1,0 +1,26 @@
+{% comment %}
+  Order of Things page shell. Only templates that set "layout": "oot" use it, so
+  Horizon's styles and scripts stay off our page and ours stay off the rest of the store.
+{% endcomment %}
+<!doctype html>
+<html lang="{{ request.locale.iso_code }}" dir="{{ request.locale.direction | default: 'ltr' }}">
+  <head>
+    {%- render 'meta-tags' -%}
+    {%- render 'oot-fonts' -%}
+    {{ 'oot.css' | asset_url | stylesheet_tag }}
+
+    {{ content_for_header }}
+  </head>
+
+  <body>
+    <a class="oot-skip-link" href="#MainContent">{{ 'oot.skip_to_content' | t }}</a>
+
+    <div class="oot-header-group">
+      {% sections 'oot-header-group' %}
+    </div>
+
+    <main id="MainContent" role="main">
+      {{ content_for_layout }}
+    </main>
+  </body>
+</html>

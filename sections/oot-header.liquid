@@ -1,0 +1,257 @@
+{% comment %}
+  Section contract.
+  Site header for the Order of Things layout (Figma Header/Desktop 14:3704 and
+  Header/Mobile 14:3883, variant "Compact Light"). Top row: search, wordmark, account
+  and cart. A centered nav row below it on desktop. The cart count element keeps a
+  stable id so the cart can refresh it through the Section Rendering API.
+  @example
+  <!-- Lives in sections/oot-header-group.json, rendered by layout/oot.liquid -->
+{% endcomment %}
+
+{%- liquid
+  assign menu = linklists[section.settings.menu]
+  assign logo_width = section.settings.logo_width
+  # The mobile wordmark is 140px when the desktop one is 200px (Figma), so keep that ratio.
+  assign logo_width_mobile = logo_width | times: 0.7 | round
+-%}
+
+<header
+  class="oot-header"
+  data-site-header
+  {% if section.settings.sticky %}
+    data-sticky
+  {% endif %}
+  style="--oot-logo-width: {{ logo_width }}px; --oot-logo-width-mobile: {{ logo_width_mobile }}px;"
+>
+  <div class="oot-container oot-header__inner">
+    <div class="oot-header__top">
+      <div class="oot-header__start">
+        {%- # Placeholder, like round 1: Figma has the button but no open-menu design. -%}
+        <button type="button" class="oot-header__menu" aria-label="{{ 'oot.header.menu' | t }}">
+          {% render 'oot-icon', name: 'menu' %}
+        </button>
+
+        {%- if section.settings.show_search -%}
+          <a href="{{ routes.search_url }}" class="oot-header__search oot-nav">
+            {% render 'oot-icon', name: 'search', class: 'oot-header__search-icon' %}
+            <span class="oot-header__search-label">{{ 'oot.header.search' | t }}</span>
+          </a>
+        {%- endif -%}
+      </div>
+
+      <a href="{{ routes.root_url }}" class="oot-header__logo" aria-label="{{ 'oot.header.home' | t }}">
+        {%- if section.settings.logo != blank -%}
+          {%- capture sizes -%}(min-width: 1024px) {{ logo_width }}px, {{ logo_width_mobile }}px{%- endcapture -%}
+          {{
+            section.settings.logo
+            | image_url: width: 600
+            | image_tag: widths: '140, 200, 280, 400, 600', sizes: sizes, alt: '', class: 'oot-header__logo-image'
+          }}
+        {%- else -%}
+          {% render 'oot-icon', name: 'wordmark', class: 'oot-header__wordmark' %}
+        {%- endif -%}
+      </a>
+
+      <div class="oot-header__end oot-nav">
+        {%- if section.settings.show_account and shop.customer_accounts_enabled -%}
+          <a href="{{ routes.account_login_url }}" class="oot-header__account">{{ 'oot.header.login' | t }}</a>
+        {%- endif -%}
+        <a href="{{ routes.cart_url }}" id="oot-cart-count">
+          {{- 'oot.header.cart' | t: count: cart.item_count -}}
+        </a>
+      </div>
+    </div>
+
+    {%- if menu.links.size > 0 -%}
+      <nav class="oot-header__nav oot-nav" aria-label="{{ 'oot.header.primary_nav' | t }}">
+        {%- for link in menu.links -%}
+          <a
+            href="{{ link.url }}"
+            {% if link.current %}
+              aria-current="page"
+            {% endif %}
+          >
+            {{- link.title | escape -}}
+          </a>
+        {%- endfor -%}
+      </nav>
+    {%- endif -%}
+  </div>
+</header>
+
+{% stylesheet %}
+  .oot-header {
+    background: var(--oot-color-bone);
+  }
+
+  .oot-header__inner {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-block: 12px;
+  }
+
+  .oot-header__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: 12px 14px;
+    border-block-end: 1px solid var(--oot-color-ink);
+  }
+
+  .oot-header__start,
+  .oot-header__end {
+    display: flex;
+    align-items: center;
+    width: 96px;
+  }
+
+  .oot-header__start {
+    gap: 18px;
+  }
+
+  .oot-header__end {
+    justify-content: flex-end;
+    gap: 32px;
+  }
+
+  .oot-header__search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .oot-header__search-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .oot-header__search-label,
+  .oot-header__account {
+    display: none;
+  }
+
+  .oot-header__logo {
+    display: block;
+  }
+
+  .oot-header__wordmark,
+  .oot-header__logo-image {
+    width: var(--oot-logo-width-mobile);
+  }
+
+  .oot-header__nav {
+    display: none;
+  }
+
+  @media (min-width: 1024px) {
+    .oot-header__inner {
+      padding-block: 34px;
+    }
+
+    .oot-header__top {
+      padding-block: 0 16px;
+    }
+
+    .oot-header__start {
+      width: 132px;
+      gap: 8px;
+    }
+
+    .oot-header__end {
+      width: auto;
+    }
+
+    .oot-header__menu {
+      display: none;
+    }
+
+    .oot-header__search-icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    .oot-header__search-label,
+    .oot-header__account {
+      display: inline;
+    }
+
+    .oot-header__wordmark,
+    .oot-header__logo-image {
+      width: var(--oot-logo-width);
+    }
+
+    .oot-header__nav {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "OoT header",
+  "class": "oot-header-section",
+  "enabled_on": {
+    "groups": ["header"]
+  },
+  "settings": [
+    {
+      "type": "header",
+      "content": "Logo"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo",
+      "label": "Logo image",
+      "info": "Leave empty to use the Order of Things wordmark."
+    },
+    {
+      "type": "range",
+      "id": "logo_width",
+      "label": "Logo width on desktop",
+      "info": "Mobile uses 70% of this width.",
+      "min": 120,
+      "max": 300,
+      "step": 4,
+      "unit": "px",
+      "default": 200
+    },
+    {
+      "type": "header",
+      "content": "Navigation"
+    },
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "Menu",
+      "info": "Shown under the logo on desktop. Leave empty to hide the nav row."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_search",
+      "label": "Show search link",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_account",
+      "label": "Show login link",
+      "info": "Only shows when customer accounts are turned on.",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "sticky",
+      "label": "Stick to the top while scrolling",
+      "default": true
+    }
+  ],
+  "presets": [
+    {
+      "name": "OoT header"
+    }
+  ]
+}
+{% endschema %}

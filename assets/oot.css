@@ -1,0 +1,268 @@
+/*
+ * Order of Things design tokens and type scale, translated from round 1's
+ * app/globals.css (Figma OoT/* styles). Figma letter-spacing is in %, so it
+ * maps to em / 100. Mobile (390) values first, desktop (1440) from 1024px up.
+ * Font families come from snippets/oot-fonts.liquid.
+ */
+
+:root {
+  --oot-color-bone: #f2ede6;
+  --oot-color-ink: #383331;
+  --oot-color-charcoal: #2c2826;
+  --oot-color-butter: #e0d693;
+  --oot-color-hairline: #d9d3cb;
+  /* Button hover. Figma only says "fill darkens", so this is our value. */
+  --oot-color-charcoal-hover: #1a1716;
+
+  /* Composition swatches, read through var(--oot-color-composition-N). */
+  --oot-color-composition-1: #9b383a;
+  --oot-color-composition-2: #173425;
+  --oot-color-composition-3: #2b397e;
+  --oot-color-composition-4: #b07a2e;
+  --oot-color-composition-5: #5b3a5e;
+  --oot-color-composition-6: #5e6e6a;
+
+  --oot-gutter: 20px;
+  --oot-page-width: 1440px;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --oot-gutter: 40px;
+  }
+}
+
+/* Base */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--oot-color-bone);
+  color: var(--oot-color-ink);
+  font-family: var(--oot-font-body);
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+}
+
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Layout helpers */
+
+.oot-container {
+  max-width: var(--oot-page-width);
+  margin-inline: auto;
+  padding-inline: var(--oot-gutter);
+}
+
+/* The header group wrapper (layout/oot.liquid) sticks, not the section: a sticky
+   element can't leave its own .shopify-section wrapper, which is only as tall as
+   the header. The header's "sticky" setting adds [data-sticky]. */
+.oot-header-group:has([data-sticky]) {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.oot-visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.oot-skip-link {
+  position: absolute;
+  inset-block-start: 8px;
+  inset-inline-start: 8px;
+  z-index: 100;
+  padding: 8px 12px;
+  background: var(--oot-color-charcoal);
+  color: var(--oot-color-bone);
+  transform: translateY(-200%);
+}
+
+.oot-skip-link:focus {
+  transform: none;
+}
+
+/* Type scale. Styles marked "Global" in Figma are the same at both sizes. */
+
+.oot-h1 {
+  font-family: var(--oot-font-display);
+  font-weight: 600;
+  font-size: 40px;
+  line-height: 0.96;
+  letter-spacing: -0.005em;
+}
+
+.oot-h2 {
+  font-family: var(--oot-font-display);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.oot-h3 {
+  font-family: var(--oot-font-display);
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.oot-body-m {
+  font-family: var(--oot-font-body);
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.oot-body-s {
+  font-family: var(--oot-font-body);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.oot-product-meta {
+  font-family: var(--oot-font-body);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.oot-label {
+  font-family: var(--oot-font-body);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* OoT/Mobile/Label: the mobile gallery counter. */
+.oot-label-mobile {
+  font-family: var(--oot-font-body);
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.3;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Price in the buy panel: Mobile/H2 on mobile, Desktop/H3 from 1024px. */
+.oot-price {
+  font-family: var(--oot-font-display);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.oot-nav {
+  font-family: var(--oot-font-body);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.33;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.oot-caption {
+  font-family: var(--oot-font-body);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.33;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.oot-button-l {
+  font-family: var(--oot-font-display);
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.oot-button-m {
+  font-family: var(--oot-font-display);
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 1024px) {
+  .oot-h1 {
+    font-size: 64px;
+  }
+
+  .oot-h2 {
+    font-size: 40px;
+  }
+
+  .oot-price {
+    font-size: 24px;
+    line-height: 1.1;
+  }
+}

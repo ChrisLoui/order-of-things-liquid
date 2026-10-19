@@ -1,0 +1,17 @@
+{
+  "type": "header",
+  "name": "Order of Things header",
+  "sections": {
+    "header": {
+      "type": "oot-header",
+      "settings": {
+        "menu": "order-of-things",
+        "logo_width": 200,
+        "show_search": true,
+        "show_account": true,
+        "sticky": true
+      }
+    }
+  },
+  "order": ["header"]
+}

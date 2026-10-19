@@ -8,6 +8,17 @@
  * ------------------------------------------------------------
  */
 {
+  "oot": {
+    "skip_to_content": "Skip to content",
+    "header": {
+      "home": "Order of Things, home",
+      "menu": "Menu",
+      "search": "Search",
+      "login": "Login",
+      "cart": "Cart ({{ count }})",
+      "primary_nav": "Primary"
+    }
+  },
   "accessibility": {
     "account": "Account",
     "active_filters": "Active filters:",
